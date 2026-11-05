@@ -1,0 +1,770 @@
+{
+  "modelo": "XGBClassifier",
+  "hiperparametros": {
+    "learning_rate": 0.06,
+    "max_depth": 3,
+    "min_child_weight": 10,
+    "n_estimators": 400
+  },
+  "umbral": 0.5183365941047668,
+  "nombres_originales": {
+    "ID": "id",
+    "efs": "evento",
+    "efs_time": "meses_hasta_evento",
+    "dri_score": "indice_riesgo_enfermedad",
+    "psych_disturb": "trastorno_psiquiatrico",
+    "cyto_score": "puntaje_citogenetico",
+    "diabetes": "diabetes",
+    "hla_match_c_high": "hla_c_alta_res",
+    "hla_high_res_8": "hla_alta_res_8",
+    "tbi_status": "irradiacion_corporal_total",
+    "arrhythmia": "arritmia",
+    "hla_low_res_6": "hla_baja_res_6",
+    "graft_type": "tipo_injerto",
+    "vent_hist": "antecedente_ventilacion",
+    "renal_issue": "enfermedad_renal",
+    "pulm_severe": "enfermedad_pulmonar_severa",
+    "prim_disease_hct": "enfermedad_principal",
+    "hla_high_res_6": "hla_alta_res_6",
+    "cmv_status": "serologia_cmv",
+    "hla_high_res_10": "hla_alta_res_10",
+    "hla_match_dqb1_high": "hla_dqb1_alta_res",
+    "tce_imm_match": "epitopos_t_inmunogenicidad",
+    "hla_nmdp_6": "hla_nmdp_6",
+    "hla_match_c_low": "hla_c_baja_res",
+    "rituximab": "rituximab",
+    "hla_match_drb1_low": "hla_drb1_baja_res",
+    "hla_match_dqb1_low": "hla_dqb1_baja_res",
+    "prod_type": "tipo_producto",
+    "cyto_score_detail": "citogenetica_detalle",
+    "conditioning_intensity": "intensidad_acondicionamiento",
+    "ethnicity": "etnicidad",
+    "year_hct": "anio_trasplante",
+    "obesity": "obesidad",
+    "mrd_hct": "enfermedad_minima_residual",
+    "in_vivo_tcd": "deplecion_celulas_t",
+    "tce_match": "epitopos_t_compatibilidad",
+    "hla_match_a_high": "hla_a_alta_res",
+    "hepatic_severe": "enfermedad_hepatica_severa",
+    "donor_age": "edad_donante",
+    "prior_tumor": "tumor_previo",
+    "hla_match_b_low": "hla_b_baja_res",
+    "peptic_ulcer": "ulcera_peptica",
+    "age_at_hct": "edad_paciente",
+    "hla_match_a_low": "hla_a_baja_res",
+    "gvhd_proph": "profilaxis_injerto_huesped",
+    "rheum_issue": "enfermedad_reumatologica",
+    "sex_match": "sexo_donante_receptor",
+    "hla_match_b_high": "hla_b_alta_res",
+    "race_group": "grupo_racial",
+    "comorbidity_score": "indice_comorbilidad_sorror",
+    "karnofsky_score": "escala_karnofsky",
+    "hepatic_mild": "enfermedad_hepatica_leve",
+    "tce_div_match": "epitopos_t_diversidad",
+    "donor_related": "donante_emparentado",
+    "melphalan_dose": "dosis_melfalan",
+    "hla_low_res_8": "hla_baja_res_8",
+    "cardiac": "enfermedad_cardiaca",
+    "hla_match_drb1_high": "hla_drb1_alta_res",
+    "pulm_moderate": "enfermedad_pulmonar_moderada",
+    "hla_low_res_10": "hla_baja_res_10"
+  },
+  "columnas_eliminadas": [
+    "enfermedad_minima_residual",
+    "epitopos_t_compatibilidad"
+  ],
+  "variables_geneticas": [
+    "citogenetica_detalle",
+    "epitopos_t_diversidad",
+    "epitopos_t_inmunogenicidad",
+    "hla_a_alta_res",
+    "hla_a_baja_res",
+    "hla_alta_res_10",
+    "hla_alta_res_6",
+    "hla_alta_res_8",
+    "hla_b_alta_res",
+    "hla_b_baja_res",
+    "hla_baja_res_10",
+    "hla_baja_res_6",
+    "hla_baja_res_8",
+    "hla_c_alta_res",
+    "hla_c_baja_res",
+    "hla_dqb1_alta_res",
+    "hla_dqb1_baja_res",
+    "hla_drb1_alta_res",
+    "hla_drb1_baja_res",
+    "hla_nmdp_6",
+    "puntaje_citogenetico"
+  ],
+  "columnas_entrada": [
+    "trastorno_psiquiatrico",
+    "puntaje_citogenetico",
+    "diabetes",
+    "hla_c_alta_res",
+    "hla_alta_res_8",
+    "irradiacion_corporal_total",
+    "arritmia",
+    "hla_baja_res_6",
+    "tipo_injerto",
+    "antecedente_ventilacion",
+    "enfermedad_renal",
+    "enfermedad_pulmonar_severa",
+    "enfermedad_principal",
+    "hla_alta_res_6",
+    "serologia_cmv",
+    "hla_alta_res_10",
+    "hla_dqb1_alta_res",
+    "epitopos_t_inmunogenicidad",
+    "hla_nmdp_6",
+    "hla_c_baja_res",
+    "rituximab",
+    "hla_drb1_baja_res",
+    "hla_dqb1_baja_res",
+    "tipo_producto",
+    "citogenetica_detalle",
+    "intensidad_acondicionamiento",
+    "anio_trasplante",
+    "obesidad",
+    "deplecion_celulas_t",
+    "hla_a_alta_res",
+    "enfermedad_hepatica_severa",
+    "edad_donante",
+    "tumor_previo",
+    "hla_b_baja_res",
+    "ulcera_peptica",
+    "edad_paciente",
+    "hla_a_baja_res",
+    "profilaxis_injerto_huesped",
+    "enfermedad_reumatologica",
+    "sexo_donante_receptor",
+    "hla_b_alta_res",
+    "indice_comorbilidad_sorror",
+    "escala_karnofsky",
+    "enfermedad_hepatica_leve",
+    "epitopos_t_diversidad",
+    "donante_emparentado",
+    "dosis_melfalan",
+    "hla_baja_res_8",
+    "enfermedad_cardiaca",
+    "hla_drb1_alta_res",
+    "enfermedad_pulmonar_moderada",
+    "hla_baja_res_10",
+    "dif_edad_donante",
+    "es_pediatrico",
+    "n_comorbilidades",
+    "recibio_irradiacion",
+    "grupo_riesgo_enfermedad"
+  ],
+  "descripciones": {
+    "indice_riesgo_enfermedad": "Refined disease risk index",
+    "trastorno_psiquiatrico": "Psychiatric disturbance",
+    "puntaje_citogenetico": "Cytogenetic score",
+    "diabetes": "Diabetes",
+    "hla_c_alta_res": "Recipient / 1st donor allele level (high resolution) matching at HLA-C",
+    "hla_alta_res_8": "Recipient / 1st donor allele-level (high resolution) matching at HLA-A,-B,-C,-DRB1",
+    "irradiacion_corporal_total": "TBI",
+    "arritmia": "Arrhythmia",
+    "hla_baja_res_6": "Recipient / 1st donor antigen-level (low resolution) matching at HLA-A,-B,-DRB1",
+    "tipo_injerto": "Graft type",
+    "antecedente_ventilacion": "History of mechanical ventilation",
+    "enfermedad_renal": "Renal, moderate / severe",
+    "enfermedad_pulmonar_severa": "Pulmonary, severe",
+    "enfermedad_principal": "Primary disease for HCT",
+    "hla_alta_res_6": "Recipient / 1st donor allele-level (high resolution) matching at HLA-A,-B,-DRB1",
+    "serologia_cmv": "Donor/recipient CMV serostatus",
+    "hla_alta_res_10": "Recipient / 1st donor allele-level (high resolution) matching at HLA-A,-B,-C,-DRB1,-DQB1",
+    "hla_dqb1_alta_res": "Recipient / 1st donor allele level (high resolution) matching at HLA-DQB1",
+    "epitopos_t_inmunogenicidad": "T-cell epitope immunogenicity/diversity match",
+    "hla_nmdp_6": "Recipient / 1st donor matching at HLA-A(lo),-B(lo),-DRB1(hi)",
+    "hla_c_baja_res": "Recipient / 1st donor antigen level (low resolution) matching at HLA-C",
+    "rituximab": "Rituximab given in conditioning",
+    "hla_drb1_baja_res": "Recipient / 1st donor antigen level (low resolution) matching at HLA-DRB1",
+    "hla_dqb1_baja_res": "Recipient / 1st donor antigen level (low resolution) matching at HLA-DQB1",
+    "tipo_producto": "Product type",
+    "citogenetica_detalle": "Cytogenetics for DRI (AML/MDS)",
+    "intensidad_acondicionamiento": "Computed planned conditioning intensity",
+    "etnicidad": "Ethnicity",
+    "anio_trasplante": "Year of HCT",
+    "obesidad": "Obesity",
+    "enfermedad_minima_residual": "MRD at time of HCT (AML/ALL)",
+    "deplecion_celulas_t": "In-vivo T-cell depletion (ATG/alemtuzumab)",
+    "epitopos_t_compatibilidad": "T-cell epitope matching",
+    "hla_a_alta_res": "Recipient / 1st donor allele level (high resolution) matching at HLA-A",
+    "enfermedad_hepatica_severa": "Hepatic, moderate / severe",
+    "edad_donante": "Donor age",
+    "tumor_previo": "Solid tumor, prior",
+    "hla_b_baja_res": "Recipient / 1st donor antigen level (low resolution) matching at HLA-B",
+    "ulcera_peptica": "Peptic ulcer",
+    "edad_paciente": "Age at HCT",
+    "hla_a_baja_res": "Recipient / 1st donor antigen level (low resolution) matching at HLA-A",
+    "profilaxis_injerto_huesped": "Planned GVHD prophylaxis",
+    "enfermedad_reumatologica": "Rheumatologic",
+    "sexo_donante_receptor": "Donor/recipient sex match",
+    "hla_b_alta_res": "Recipient / 1st donor allele level (high resolution) matching at HLA-B",
+    "grupo_racial": "Race",
+    "indice_comorbilidad_sorror": "Sorror comorbidity score",
+    "escala_karnofsky": "KPS at HCT",
+    "enfermedad_hepatica_leve": "Hepatic, mild",
+    "epitopos_t_diversidad": "T-cell epitope matching",
+    "donante_emparentado": "Related vs. unrelated donor",
+    "dosis_melfalan": "Melphalan dose (mg/m^2)",
+    "hla_baja_res_8": "Recipient / 1st donor antigen-level (low resolution) matching at HLA-A,-B,-C,-DRB1",
+    "enfermedad_cardiaca": "Cardiac",
+    "hla_drb1_alta_res": "Recipient / 1st donor allele level (high resolution) matching at HLA-DRB1",
+    "enfermedad_pulmonar_moderada": "Pulmonary, moderate",
+    "evento": "Event-free survival",
+    "meses_hasta_evento": "Time to event-free survival, months"
+  },
+  "fuente_diccionario": "https://www.kaggle.com/competitions/equity-post-HCT-survival-predictions/data",
+  "variables_formulario": [
+    "indice_riesgo_enfermedad",
+    "trastorno_psiquiatrico",
+    "puntaje_citogenetico",
+    "diabetes",
+    "hla_c_alta_res",
+    "hla_alta_res_8",
+    "irradiacion_corporal_total",
+    "arritmia",
+    "hla_baja_res_6",
+    "tipo_injerto",
+    "antecedente_ventilacion",
+    "enfermedad_renal",
+    "enfermedad_pulmonar_severa",
+    "enfermedad_principal",
+    "hla_alta_res_6",
+    "serologia_cmv",
+    "hla_alta_res_10",
+    "hla_dqb1_alta_res",
+    "epitopos_t_inmunogenicidad",
+    "hla_nmdp_6",
+    "hla_c_baja_res",
+    "rituximab",
+    "hla_drb1_baja_res",
+    "hla_dqb1_baja_res",
+    "tipo_producto",
+    "citogenetica_detalle",
+    "intensidad_acondicionamiento",
+    "anio_trasplante",
+    "obesidad",
+    "deplecion_celulas_t",
+    "hla_a_alta_res",
+    "enfermedad_hepatica_severa",
+    "edad_donante",
+    "tumor_previo",
+    "hla_b_baja_res",
+    "ulcera_peptica",
+    "edad_paciente",
+    "hla_a_baja_res",
+    "profilaxis_injerto_huesped",
+    "enfermedad_reumatologica",
+    "sexo_donante_receptor",
+    "hla_b_alta_res",
+    "indice_comorbilidad_sorror",
+    "escala_karnofsky",
+    "enfermedad_hepatica_leve",
+    "epitopos_t_diversidad",
+    "donante_emparentado",
+    "dosis_melfalan",
+    "hla_baja_res_8",
+    "enfermedad_cardiaca",
+    "hla_drb1_alta_res",
+    "enfermedad_pulmonar_moderada",
+    "hla_baja_res_10"
+  ],
+  "opciones": {
+    "indice_riesgo_enfermedad": [
+      "High",
+      "High - TED AML case <missing cytogenetics",
+      "Intermediate",
+      "Intermediate - TED AML case <missing cytogenetics",
+      "Low",
+      "Missing disease status",
+      "N/A - disease not classifiable",
+      "N/A - non-malignant indication",
+      "N/A - pediatric",
+      "TBD cytogenetics",
+      "Very high"
+    ],
+    "trastorno_psiquiatrico": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "puntaje_citogenetico": [
+      "Favorable",
+      "Intermediate",
+      "Normal",
+      "Not tested",
+      "Other",
+      "Poor",
+      "TBD"
+    ],
+    "diabetes": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "irradiacion_corporal_total": [
+      "No TBI",
+      "TBI + Cy +- Other",
+      "TBI +- Other, -cGy, fractionated",
+      "TBI +- Other, -cGy, single",
+      "TBI +- Other, -cGy, unknown dose",
+      "TBI +- Other, <=cGy",
+      "TBI +- Other, >cGy",
+      "TBI +- Other, unknown dose"
+    ],
+    "arritmia": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "tipo_injerto": [
+      "Bone marrow",
+      "Peripheral blood"
+    ],
+    "antecedente_ventilacion": [
+      "No",
+      "Yes"
+    ],
+    "enfermedad_renal": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "enfermedad_pulmonar_severa": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "enfermedad_principal": [
+      "AI",
+      "ALL",
+      "AML",
+      "CML",
+      "HD",
+      "HIS",
+      "IEA",
+      "IIS",
+      "IMD",
+      "IPA",
+      "MDS",
+      "MPN",
+      "NHL",
+      "Other acute leukemia",
+      "Other leukemia",
+      "PCD",
+      "SAA",
+      "Solid tumor"
+    ],
+    "serologia_cmv": [
+      "+/+",
+      "+/-",
+      "-/+",
+      "-/-"
+    ],
+    "epitopos_t_inmunogenicidad": [
+      "G/B",
+      "G/G",
+      "H/B",
+      "H/H",
+      "P/B",
+      "P/G",
+      "P/H",
+      "P/P"
+    ],
+    "rituximab": [
+      "No",
+      "Yes"
+    ],
+    "tipo_producto": [
+      "BM",
+      "PB"
+    ],
+    "citogenetica_detalle": [
+      "Favorable",
+      "Intermediate",
+      "Not tested",
+      "Poor",
+      "TBD"
+    ],
+    "intensidad_acondicionamiento": [
+      "MAC",
+      "N/A, F(pre-TED) not submitted",
+      "NMA",
+      "No drugs reported",
+      "RIC",
+      "TBD"
+    ],
+    "obesidad": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "deplecion_celulas_t": [
+      "No",
+      "Yes"
+    ],
+    "enfermedad_hepatica_severa": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "tumor_previo": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "ulcera_peptica": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "profilaxis_injerto_huesped": [
+      "CDselect +- other",
+      "CDselect alone",
+      "CSA + MMF +- others(not FK)",
+      "CSA + MTX +- others(not MMF,FK)",
+      "CSA +- others(not FK,MMF,MTX)",
+      "CSA alone",
+      "Cyclophosphamide +- others",
+      "Cyclophosphamide alone",
+      "FK+ MMF +- others",
+      "FK+ MTX +- others(not MMF)",
+      "FK+- others(not MMF,MTX)",
+      "FKalone",
+      "No GvHD Prophylaxis",
+      "Other GVHD Prophylaxis",
+      "Parent Q = yes, but no agent",
+      "TDEPLETION +- other",
+      "TDEPLETION alone"
+    ],
+    "enfermedad_reumatologica": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "sexo_donante_receptor": [
+      "F-F",
+      "F-M",
+      "M-F",
+      "M-M"
+    ],
+    "enfermedad_hepatica_leve": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "epitopos_t_diversidad": [
+      "Bi-directional non-permissive",
+      "GvH non-permissive",
+      "HvG non-permissive",
+      "Permissive mismatched"
+    ],
+    "donante_emparentado": [
+      "Multiple donor (non-UCB)",
+      "Related",
+      "Unrelated"
+    ],
+    "dosis_melfalan": [
+      "MEL",
+      "N/A, Mel not given"
+    ],
+    "enfermedad_cardiaca": [
+      "No",
+      "Not done",
+      "Yes"
+    ],
+    "enfermedad_pulmonar_moderada": [
+      "No",
+      "Not done",
+      "Yes"
+    ]
+  },
+  "rangos": {
+    "hla_c_alta_res": [
+      0.0,
+      2.0,
+      2.0
+    ],
+    "hla_alta_res_8": [
+      2.0,
+      8.0,
+      8.0
+    ],
+    "hla_baja_res_6": [
+      2.0,
+      6.0,
+      6.0
+    ],
+    "hla_alta_res_6": [
+      0.0,
+      6.0,
+      6.0
+    ],
+    "hla_alta_res_10": [
+      3.0,
+      10.0,
+      10.0
+    ],
+    "hla_dqb1_alta_res": [
+      0.0,
+      2.0,
+      2.0
+    ],
+    "hla_nmdp_6": [
+      2.0,
+      6.0,
+      6.0
+    ],
+    "hla_c_baja_res": [
+      0.0,
+      2.0,
+      2.0
+    ],
+    "hla_drb1_baja_res": [
+      1.0,
+      2.0,
+      2.0
+    ],
+    "hla_dqb1_baja_res": [
+      0.0,
+      2.0,
+      2.0
+    ],
+    "anio_trasplante": [
+      2008,
+      2016.0,
+      2020
+    ],
+    "hla_a_alta_res": [
+      0.0,
+      2.0,
+      2.0
+    ],
+    "edad_donante": [
+      18.01,
+      40.063,
+      84.8
+    ],
+    "hla_b_baja_res": [
+      0.0,
+      2.0,
+      2.0
+    ],
+    "edad_paciente": [
+      0.044,
+      41.006,
+      73.726
+    ],
+    "hla_a_baja_res": [
+      0.0,
+      2.0,
+      2.0
+    ],
+    "hla_b_alta_res": [
+      0.0,
+      2.0,
+      2.0
+    ],
+    "indice_comorbilidad_sorror": [
+      0.0,
+      1.0,
+      10.0
+    ],
+    "escala_karnofsky": [
+      40.0,
+      90.0,
+      100.0
+    ],
+    "hla_baja_res_8": [
+      2.0,
+      8.0,
+      8.0
+    ],
+    "hla_drb1_alta_res": [
+      0.0,
+      2.0,
+      2.0
+    ],
+    "hla_baja_res_10": [
+      4.0,
+      10.0,
+      10.0
+    ]
+  },
+  "metricas_prueba": {
+    "AUC-ROC": 0.7424616989817854,
+    "average precision": 0.7460408717244521,
+    "F1 macro": 0.677268041206055,
+    "balanced accuracy": 0.6770075265039901,
+    "recall del evento": 0.7167553191489362,
+    "precision del evento": 0.6872078198045048,
+    "Brier score": 0.2044643759727478
+  },
+  "c_index_estratificado": 0.6464235440486474,
+  "equidad_prueba": [
+    {
+      "grupo": "American Indian or Alaska Native",
+      "pacientes": 710,
+      "% con evento": 49.7183,
+      "AUC": 0.7388,
+      "recall del evento": 0.6997,
+      "C-index": 0.6606
+    },
+    {
+      "grupo": "Asian",
+      "pacientes": 722,
+      "% con evento": 54.1551,
+      "AUC": 0.7446,
+      "recall del evento": 0.7621,
+      "C-index": 0.6781
+    },
+    {
+      "grupo": "Black or African-American",
+      "pacientes": 715,
+      "% con evento": 55.1049,
+      "AUC": 0.7555,
+      "recall del evento": 0.6853,
+      "C-index": 0.6668
+    },
+    {
+      "grupo": "More than one race",
+      "pacientes": 717,
+      "% con evento": 44.4909,
+      "AUC": 0.7313,
+      "recall del evento": 0.6144,
+      "C-index": 0.6604
+    },
+    {
+      "grupo": "Native Hawaiian or other Pacific Islander",
+      "pacientes": 698,
+      "% con evento": 51.1461,
+      "AUC": 0.729,
+      "recall del evento": 0.7031,
+      "C-index": 0.6557
+    },
+    {
+      "grupo": "White",
+      "pacientes": 723,
+      "% con evento": 61.1342,
+      "AUC": 0.7311,
+      "recall del evento": 0.8032,
+      "C-index": 0.635
+    }
+  ],
+  "deciles_prueba": [
+    {
+      "decil": "D1",
+      "pacientes": 429,
+      "riesgo_medio_predicho": 0.1573999971151352,
+      "tasa_real_de_evento": 0.1399
+    },
+    {
+      "decil": "D2",
+      "pacientes": 428,
+      "riesgo_medio_predicho": 0.27869999408721924,
+      "tasa_real_de_evento": 0.2687
+    },
+    {
+      "decil": "D3",
+      "pacientes": 429,
+      "riesgo_medio_predicho": 0.37599998712539673,
+      "tasa_real_de_evento": 0.3869
+    },
+    {
+      "decil": "D4",
+      "pacientes": 428,
+      "riesgo_medio_predicho": 0.4512999951839447,
+      "tasa_real_de_evento": 0.4252
+    },
+    {
+      "decil": "D5",
+      "pacientes": 429,
+      "riesgo_medio_predicho": 0.5177000164985657,
+      "tasa_real_de_evento": 0.5571
+    },
+    {
+      "decil": "D6",
+      "pacientes": 428,
+      "riesgo_medio_predicho": 0.57669997215271,
+      "tasa_real_de_evento": 0.5724
+    },
+    {
+      "decil": "D7",
+      "pacientes": 428,
+      "riesgo_medio_predicho": 0.6294999718666077,
+      "tasa_real_de_evento": 0.6168
+    },
+    {
+      "decil": "D8",
+      "pacientes": 429,
+      "riesgo_medio_predicho": 0.6812000274658203,
+      "tasa_real_de_evento": 0.6946
+    },
+    {
+      "decil": "D9",
+      "pacientes": 428,
+      "riesgo_medio_predicho": 0.741100013256073,
+      "tasa_real_de_evento": 0.7617
+    },
+    {
+      "decil": "D10",
+      "pacientes": 429,
+      "riesgo_medio_predicho": 0.8363999724388123,
+      "tasa_real_de_evento": 0.8415
+    }
+  ],
+  "importancia_shap": {
+    "sexo_donante_receptor": 0.1836100071668625,
+    "intensidad_acondicionamiento": 0.17648999392986298,
+    "anio_trasplante": 0.14507000148296356,
+    "profilaxis_injerto_huesped": 0.14480000734329224,
+    "compatibilidad_hla": 0.13926999270915985,
+    "puntaje_citogenetico": 0.13476000726222992,
+    "indice_comorbilidad_sorror": 0.11856000125408173,
+    "deplecion_celulas_t": 0.1140500009059906,
+    "edad_paciente": 0.11065000295639038,
+    "grupo_riesgo_enfermedad": 0.10787999629974365,
+    "serologia_cmv": 0.1049799993634224,
+    "citogenetica_detalle": 0.090829998254776,
+    "enfermedad_principal": 0.08959999680519104,
+    "escala_karnofsky": 0.08186999708414078,
+    "tipo_injerto": 0.07446999847888947,
+    "tipo_producto": 0.06982000172138214,
+    "n_comorbilidades": 0.06757000088691711,
+    "irradiacion_corporal_total": 0.06391000002622604,
+    "edad_donante": 0.043630000203847885,
+    "enfermedad_cardiaca": 0.035750001668930054,
+    "enfermedad_hepatica_severa": 0.0350399985909462,
+    "enfermedad_pulmonar_severa": 0.03116999939084053,
+    "donante_emparentado": 0.01744000054895878,
+    "epitopos_t_inmunogenicidad": 0.015159999951720238,
+    "dif_edad_donante": 0.010499999858438969,
+    "enfermedad_pulmonar_moderada": 0.0086899995803833,
+    "recibio_irradiacion": 0.0081599997356534,
+    "trastorno_psiquiatrico": 0.00795000046491623,
+    "dosis_melfalan": 0.007849999703466892,
+    "ulcera_peptica": 0.006560000125318766,
+    "antecedente_ventilacion": 0.006310000084340572,
+    "enfermedad_renal": 0.0062699997797608376,
+    "enfermedad_reumatologica": 0.005710000172257423,
+    "diabetes": 0.0053400001488626,
+    "epitopos_t_diversidad": 0.004279999993741512,
+    "tumor_previo": 0.004110000096261501,
+    "arritmia": 0.0020099999383091927,
+    "rituximab": 0.0011500000255182385,
+    "obesidad": 0.0006900000153109431,
+    "enfermedad_hepatica_leve": 0.0006699999794363976,
+    "es_pediatrico": 0.0
+  },
+  "tasa_base": 0.5262936769133815,
+  "pacientes_despliegue": 28562,
+  "versiones": {
+    "scikit-learn": "1.9.1",
+    "pandas": "3.0.5",
+    "numpy": "2.5.3",
+    "joblib": "1.6.0",
+    "xgboost": "3.0.5"
+  }
+}
