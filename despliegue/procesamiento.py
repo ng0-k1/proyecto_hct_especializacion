@@ -1,19 +1,37 @@
-"""Lógica compartida por la API (api.py) y la aplicación web (app.py).
+"""Preparación de datos, predicción y explicación que usa la aplicación web (app.py).
 
-NOMBRES, COMORBILIDADES, GRUPO_RIESGO y limpiar_datos son copia exacta de las secciones 2 y 3 del notebook.
-El modelo exportado es un Pipeline de scikit-learn con clases estándar, así que se carga directo con joblib.
+NOMBRES, COMORBILIDADES, GRUPO_RIESGO y limpiar_datos son copia exacta de las secciones 2 y 3 del notebook
+Proyecto_Final_ML_Riesgo_Post_Trasplante_Enviar.ipynb. Si cambian allá, deben cambiar aquí.
+
+Artefactos que consume (los exporta la sección 13 del notebook a despliegue/artefactos/):
+    preprocesamiento_hct.joblib   ColumnTransformer ajustado (SimpleImputer, StandardScaler, OneHotEncoder y PCA del bloque HLA)
+    modelo_hct.json               XGBClassifier ajustado con GridSearchCV y reentrenado con todo df_model
+    metadatos.json                umbral, métricas, deciles, opciones válidas, rangos y reglas de limpieza
+    fondo_shapley.csv             200 pacientes de referencia para los valores de Shapley
+    pacientes_ejemplo.csv         5 pacientes reales para precargar el formulario
 """
 from pathlib import Path
 import json
 
-import xgboost as xgb
-from sklearn.pipeline import Pipeline
-
 import joblib
 import numpy as np
 import pandas as pd
+import xgboost as xgb
+from sklearn.pipeline import Pipeline
 
-CARPETA_ARTEFACTOS = Path(__file__).parent / "artefactos"
+CARPETA_DESPLIEGUE = Path(__file__).resolve().parent
+CARPETA_ARTEFACTOS = CARPETA_DESPLIEGUE / "artefactos"
+CARPETA_DATOS = CARPETA_DESPLIEGUE.parent / "data"
+
+ARTEFACTOS = {
+    "preprocesamiento": "preprocesamiento_hct.joblib",
+    "modelo": "modelo_hct.json",
+    "metadatos": "metadatos.json",
+    "fondo": "fondo_shapley.csv",
+    "ejemplos": "pacientes_ejemplo.csv",
+}
+MIN_PACIENTES_FONDO = 50
+GRUPO_HLA = "compatibilidad_hla"
 
 NOMBRES = {
     "ID": "id", "efs": "evento", "efs_time": "meses_hasta_evento",
@@ -37,6 +55,7 @@ NOMBRES = {
     "hla_low_res_8": "hla_baja_res_8", "cardiac": "enfermedad_cardiaca", "hla_match_drb1_high": "hla_drb1_alta_res",
     "pulm_moderate": "enfermedad_pulmonar_moderada", "hla_low_res_10": "hla_baja_res_10",
 }
+NOMBRES_ORIGINALES = {nuevo: original for original, nuevo in NOMBRES.items()}
 
 COMORBILIDADES = ["trastorno_psiquiatrico", "diabetes", "arritmia", "enfermedad_renal", "enfermedad_pulmonar_severa",
                   "enfermedad_pulmonar_moderada", "enfermedad_hepatica_severa", "enfermedad_hepatica_leve", "obesidad",
@@ -63,38 +82,54 @@ def limpiar_datos(df, columnas_eliminadas, variables_geneticas):
     return df.drop(columns=["indice_riesgo_enfermedad"])
 
 
+# Carga de artefactos
+
+def artefactos_faltantes(carpeta=CARPETA_ARTEFACTOS):
+    return [nombre for clave, nombre in ARTEFACTOS.items() if clave != "fondo" and not (carpeta / nombre).exists()]
+
+
 def cargar_artefactos(carpeta=CARPETA_ARTEFACTOS):
-    # Recuperar el preprocesamiento
-    preprocesamiento = joblib.load(
-        carpeta / "preprocesamiento_hct.joblib"
-    )
-    # Recuperar el estimador XGBoost
+    """Reconstruye el Pipeline del notebook (columnTransformer + modelo) y lee metadatos, fondo y ejemplos.
+
+    El fondo de Shapley es opcional: si falta o no trae las variables del formulario se devuelve None
+    y la aplicación oculta la sección de explicabilidad."""
+    preprocesamiento = joblib.load(carpeta / ARTEFACTOS["preprocesamiento"])
     estimador = xgb.XGBClassifier()
-    estimador.load_model(carpeta / "modelo_hct.json")
-    # Reconstruir el Pipeline original
-    modelo = Pipeline([
-        ("columnTransformer", preprocesamiento),
-        ("modelo", estimador)
-    ])
-    # Recuperar metadatos y datos auxiliares
-    meta = json.loads(
-        (carpeta / "metadatos.json").read_text(encoding="utf-8")
-    )
-    fondo = formulario(
-        pd.read_csv(carpeta / "fondo_shapley.csv"),
-        meta
-    )
-    ejemplos = formulario(
-        pd.read_csv(carpeta / "pacientes_ejemplo.csv"),
-        meta
-    )
-    return modelo, meta, fondo, ejemplos
+    estimador.load_model(carpeta / ARTEFACTOS["modelo"])
+    modelo = Pipeline([("columnTransformer", preprocesamiento), ("modelo", estimador)])
+    meta = json.loads((carpeta / ARTEFACTOS["metadatos"]).read_text(encoding="utf-8"))
+    ejemplos_crudos = pd.read_csv(carpeta / ARTEFACTOS["ejemplos"])
+    ejemplos = formulario(ejemplos_crudos, meta)
+    ejemplos.index = ejemplos_crudos["ID"].astype(str) if "ID" in ejemplos_crudos else ejemplos.index.astype(str)
+    return modelo, meta, cargar_fondo(carpeta / ARTEFACTOS["fondo"], meta), ejemplos
 
 
+def cargar_fondo(ruta, meta):
+    if not ruta.exists():
+        return None
+    crudo = pd.read_csv(ruta)
+    if columnas_faltantes(crudo, meta) or len(crudo) < MIN_PACIENTES_FONDO:
+        return None
+    return formulario(crudo, meta)
+
+
+def valores_imputacion(modelo, meta):
+    """Valor con el que el Pipeline completa cada variable del formulario cuando llega vacía."""
+    valores = {c: "No aplica" for c in meta["variables_geneticas"]}
+    for nombre, transformador, columnas in modelo.named_steps["columnTransformer"].transformers_:
+        if nombre in ("num", "cat"):
+            imputador = transformador.named_steps["simpleImputer"]
+            valores.update({c: v for c, v in zip(columnas, imputador.statistics_) if c not in valores})
+    if "grupo_riesgo_enfermedad" in valores:
+        valores["indice_riesgo_enfermedad"] = f"grupo {valores['grupo_riesgo_enfermedad']}"
+    return valores
+
+
+# Preparación de los datos
 
 def formulario(df, meta):
-    """Deja los datos del paciente como en df_raw, con los nombres en español y las variables del formulario.
-    Acepta columnas con los nombres originales de Kaggle o con los nombres nuevos."""
+    """Deja los datos del paciente como en df_raw, con los nombres en español y solo las variables del formulario.
+    Acepta columnas con los nombres originales de Kaggle o con los nombres nuevos; las que falten quedan vacías."""
     df = df.rename(columns=NOMBRES).copy()
     for c in meta["variables_formulario"]:
         if c not in df:
@@ -103,6 +138,7 @@ def formulario(df, meta):
             df[c] = pd.to_numeric(df[c], errors="coerce").astype(float)
         else:
             df[c] = df[c].astype(object).where(df[c].notna(), np.nan)
+            df[c] = df[c].map(lambda v: (v.strip() or np.nan) if isinstance(v, str) else v)
     return df[meta["variables_formulario"]].reset_index(drop=True)
 
 
@@ -112,16 +148,46 @@ def preparar_entrada(df, meta):
     return limpio[meta["columnas_entrada"]]
 
 
-def predecir(modelo, df, meta):
-    return modelo.predict_proba(preparar_entrada(df, meta))[:, 1]
+def columnas_faltantes(df, meta):
+    presentes = set(df.rename(columns=NOMBRES).columns)
+    return [c for c in meta["variables_formulario"] if c not in presentes]
+
+
+def valores_no_reconocidos(df, meta):
+    """Categorías que no aparecieron en el entrenamiento, por variable."""
+    entrada = formulario(df, meta)
+    salida = {c: sorted(set(entrada[c].dropna().astype(str)) - set(opciones)) for c, opciones in meta["opciones"].items()}
+    return {c: v for c, v in salida.items() if v}
+
+
+def valores_fuera_de_rango(df, meta):
+    """Número de pacientes con valores numéricos fuera del rango visto en el entrenamiento, por variable."""
+    entrada = formulario(df, meta)
+    salida = {c: int(((entrada[c] < minimo) | (entrada[c] > maximo)).sum()) for c, (minimo, _, maximo) in meta["rangos"].items()}
+    return {c: n for c, n in salida.items() if n}
 
 
 def faltantes(df, meta):
     return formulario(df, meta).isna().sum(axis=1).to_numpy()
 
 
+def a_nombres_originales(df):
+    """Nombres de columnas de Kaggle (como train.csv y test.csv), para exportar archivos que se puedan volver a importar."""
+    return df.rename(columns=NOMBRES_ORIGINALES)
+
+
+def plantilla_csv(meta):
+    return pd.DataFrame(columns=["ID"] + [NOMBRES_ORIGINALES.get(c, c) for c in meta["variables_formulario"]])
+
+
+# Predicción
+
+def predecir(modelo, df, meta):
+    return modelo.predict_proba(preparar_entrada(df, meta))[:, 1]
+
+
 def nivel_riesgo(p, meta):
-    """Bajo hasta el riesgo medio del decil 3 de prueba, alto desde el decil 8."""
+    """Bajo hasta el riesgo medio predicho del decil 3 de df_test, alto desde el del decil 8 (sección 10.2 del notebook)."""
     d = meta["deciles_prueba"]
     if p >= d[7]["riesgo_medio_predicho"]:
         return "Alto"
@@ -130,21 +196,60 @@ def nivel_riesgo(p, meta):
     return "Intermedio"
 
 
-def shapley_muestreo(funcion, fila, fondo, columnas, n_permutaciones=200, semilla=42):
-    """Valores de Shapley por muestreo de permutaciones sobre las variables del formulario (mismo concepto que SHAP)."""
+def decil(p, meta):
+    """Decil de df_test cuyo riesgo medio predicho está más cerca de p."""
+    d = meta["deciles_prueba"]
+    return min(d, key=lambda fila: abs(fila["riesgo_medio_predicho"] - p))["decil"]
+
+
+def predecir_lote(modelo, df, meta):
+    """Agrega al archivo recibido el riesgo, el nivel, la alerta y el número de variables vacías de cada paciente."""
+    riesgo = predecir(modelo, df, meta)
+    resultado = pd.DataFrame({
+        "riesgo_evento_12m": riesgo.round(4),
+        "nivel": [nivel_riesgo(p, meta) for p in riesgo],
+        "alto_riesgo": riesgo >= meta["umbral"],
+        "variables_sin_dato": faltantes(df, meta),
+    }, index=df.index)
+    if "ID" in df.columns:
+        resultado.insert(0, "ID", df["ID"])
+    return pd.concat([resultado, df.drop(columns=[c for c in resultado.columns if c in df.columns])], axis=1)
+
+
+# Explicabilidad
+
+def grupos_explicacion(meta):
+    """Cada variable del formulario es un factor, salvo las 17 HLA, que se tratan juntas como en la sección 12 del notebook."""
+    hla = [c for c in meta["variables_formulario"] if c.startswith("hla_")]
+    grupos = {c: [c] for c in meta["variables_formulario"] if c not in hla}
+    if hla:
+        grupos[GRUPO_HLA] = hla
+    return grupos
+
+
+def shapley_muestreo(funcion, fila, fondo, grupos, n_permutaciones=200, semilla=42):
+    """Valores de Shapley por muestreo de permutaciones (el mismo concepto de SHAP, independiente del modelo).
+
+    En cada permutación se parte de un paciente del fondo y se le van pasando, en orden aleatorio, los valores del
+    paciente a explicar; lo que cambia el riesgo al pasar un factor es su contribución. Las contribuciones más el
+    riesgo de referencia suman exactamente el riesgo predicho del paciente."""
     rng = np.random.default_rng(semilla)
-    p = len(columnas)
+    nombres = list(grupos)
+    columnas = [c for g in nombres for c in grupos[g]]
+    grupo_de_columna = np.concatenate([[k] * len(grupos[g]) for k, g in enumerate(nombres)])
+    n_grupos = len(nombres)
     x = fila[columnas].to_numpy(dtype=object)[0]
     z = fondo[columnas].to_numpy(dtype=object)[rng.integers(len(fondo), size=n_permutaciones)]
-    ordenes = np.array([rng.permutation(p) for _ in range(n_permutaciones)])
-    mascara = np.argsort(ordenes, axis=1)[:, None, :] < np.arange(p + 1)[None, :, None]
-    hibridos = pd.DataFrame(np.where(mascara, x[None, None, :], z[:, None, :]).reshape(-1, p), columns=columnas)
-    prob = funcion(hibridos).reshape(n_permutaciones, p + 1)
-    contrib = np.zeros(p)
+    ordenes = np.array([rng.permutation(n_grupos) for _ in range(n_permutaciones)])
+    posicion = np.argsort(ordenes, axis=1)
+    mascara = (posicion[:, None, :] < np.arange(n_grupos + 1)[None, :, None])[:, :, grupo_de_columna]
+    hibridos = pd.DataFrame(np.where(mascara, x[None, None, :], z[:, None, :]).reshape(-1, len(columnas)), columns=columnas)
+    prob = funcion(hibridos).reshape(n_permutaciones, n_grupos + 1)
+    contrib = np.zeros(n_grupos)
     np.add.at(contrib, ordenes.ravel(), np.diff(prob, axis=1).ravel())
-    return pd.Series(contrib / n_permutaciones, index=columnas), float(prob[:, 0].mean())
+    return pd.Series(contrib / n_permutaciones, index=nombres), float(prob[:, 0].mean())
 
 
 def explicar(modelo, df, fondo, meta, n_permutaciones=200):
     fila = formulario(df, meta)
-    return shapley_muestreo(lambda d: predecir(modelo, d, meta), fila, fondo, meta["variables_formulario"], n_permutaciones)
+    return shapley_muestreo(lambda d: predecir(modelo, d, meta), fila, fondo, grupos_explicacion(meta), n_permutaciones)
