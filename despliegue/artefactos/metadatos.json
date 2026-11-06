@@ -3,10 +3,10 @@
   "hiperparametros": {
     "learning_rate": 0.06,
     "max_depth": 3,
-    "min_child_weight": 10,
+    "min_child_weight": 1,
     "n_estimators": 400
   },
-  "umbral": 0.5183365941047668,
+  "umbral": 0.5041824579238892,
   "nombres_originales": {
     "ID": "id",
     "efs": "evento",
@@ -594,177 +594,126 @@
     ]
   },
   "metricas_prueba": {
-    "AUC-ROC": 0.7424616989817854,
-    "average precision": 0.7460408717244521,
-    "F1 macro": 0.677268041206055,
-    "balanced accuracy": 0.6770075265039901,
-    "recall del evento": 0.7167553191489362,
-    "precision del evento": 0.6872078198045048,
-    "Brier score": 0.2044643759727478
+    "AUC-ROC": 0.7409757103558683,
+    "average precision": 0.7445258568459122,
+    "F1 macro": 0.6735721512608811,
+    "balanced accuracy": 0.6733793941745401,
+    "recall del evento": 0.7331560283687943,
+    "precision del evento": 0.6784249384741592,
+    "Brier score": 0.20507622841697876
   },
-  "c_index_estratificado": 0.6464235440486474,
-  "equidad_prueba": [
-    {
-      "grupo": "American Indian or Alaska Native",
-      "pacientes": 710,
-      "% con evento": 49.7183,
-      "AUC": 0.7388,
-      "recall del evento": 0.6997,
-      "C-index": 0.6606
-    },
-    {
-      "grupo": "Asian",
-      "pacientes": 722,
-      "% con evento": 54.1551,
-      "AUC": 0.7446,
-      "recall del evento": 0.7621,
-      "C-index": 0.6781
-    },
-    {
-      "grupo": "Black or African-American",
-      "pacientes": 715,
-      "% con evento": 55.1049,
-      "AUC": 0.7555,
-      "recall del evento": 0.6853,
-      "C-index": 0.6668
-    },
-    {
-      "grupo": "More than one race",
-      "pacientes": 717,
-      "% con evento": 44.4909,
-      "AUC": 0.7313,
-      "recall del evento": 0.6144,
-      "C-index": 0.6604
-    },
-    {
-      "grupo": "Native Hawaiian or other Pacific Islander",
-      "pacientes": 698,
-      "% con evento": 51.1461,
-      "AUC": 0.729,
-      "recall del evento": 0.7031,
-      "C-index": 0.6557
-    },
-    {
-      "grupo": "White",
-      "pacientes": 723,
-      "% con evento": 61.1342,
-      "AUC": 0.7311,
-      "recall del evento": 0.8032,
-      "C-index": 0.635
-    }
-  ],
   "deciles_prueba": [
     {
       "decil": "D1",
       "pacientes": 429,
-      "riesgo_medio_predicho": 0.1573999971151352,
-      "tasa_real_de_evento": 0.1399
+      "riesgo_medio_predicho": 0.15960000455379486,
+      "tasa_real_de_evento": 0.1305
     },
     {
       "decil": "D2",
       "pacientes": 428,
-      "riesgo_medio_predicho": 0.27869999408721924,
-      "tasa_real_de_evento": 0.2687
+      "riesgo_medio_predicho": 0.28040000796318054,
+      "tasa_real_de_evento": 0.2874
     },
     {
       "decil": "D3",
       "pacientes": 429,
-      "riesgo_medio_predicho": 0.37599998712539673,
-      "tasa_real_de_evento": 0.3869
+      "riesgo_medio_predicho": 0.3765000104904175,
+      "tasa_real_de_evento": 0.3916
     },
     {
       "decil": "D4",
       "pacientes": 428,
-      "riesgo_medio_predicho": 0.4512999951839447,
+      "riesgo_medio_predicho": 0.453000009059906,
       "tasa_real_de_evento": 0.4252
     },
     {
       "decil": "D5",
       "pacientes": 429,
-      "riesgo_medio_predicho": 0.5177000164985657,
-      "tasa_real_de_evento": 0.5571
+      "riesgo_medio_predicho": 0.5170999765396118,
+      "tasa_real_de_evento": 0.5501
     },
     {
       "decil": "D6",
       "pacientes": 428,
-      "riesgo_medio_predicho": 0.57669997215271,
-      "tasa_real_de_evento": 0.5724
+      "riesgo_medio_predicho": 0.5756000280380249,
+      "tasa_real_de_evento": 0.5444
     },
     {
       "decil": "D7",
       "pacientes": 428,
-      "riesgo_medio_predicho": 0.6294999718666077,
-      "tasa_real_de_evento": 0.6168
+      "riesgo_medio_predicho": 0.6269999742507935,
+      "tasa_real_de_evento": 0.6262
     },
     {
       "decil": "D8",
       "pacientes": 429,
-      "riesgo_medio_predicho": 0.6812000274658203,
-      "tasa_real_de_evento": 0.6946
+      "riesgo_medio_predicho": 0.6783000230789185,
+      "tasa_real_de_evento": 0.704
     },
     {
       "decil": "D9",
       "pacientes": 428,
-      "riesgo_medio_predicho": 0.741100013256073,
-      "tasa_real_de_evento": 0.7617
+      "riesgo_medio_predicho": 0.7386000156402588,
+      "tasa_real_de_evento": 0.7593
     },
     {
       "decil": "D10",
       "pacientes": 429,
-      "riesgo_medio_predicho": 0.8363999724388123,
-      "tasa_real_de_evento": 0.8415
+      "riesgo_medio_predicho": 0.8353000283241272,
+      "tasa_real_de_evento": 0.8462
     }
   ],
   "importancia_shap": {
-    "sexo_donante_receptor": 0.1836100071668625,
-    "intensidad_acondicionamiento": 0.17648999392986298,
-    "anio_trasplante": 0.14507000148296356,
-    "profilaxis_injerto_huesped": 0.14480000734329224,
-    "compatibilidad_hla": 0.13926999270915985,
-    "puntaje_citogenetico": 0.13476000726222992,
-    "indice_comorbilidad_sorror": 0.11856000125408173,
-    "deplecion_celulas_t": 0.1140500009059906,
-    "edad_paciente": 0.11065000295639038,
-    "grupo_riesgo_enfermedad": 0.10787999629974365,
-    "serologia_cmv": 0.1049799993634224,
-    "citogenetica_detalle": 0.090829998254776,
-    "enfermedad_principal": 0.08959999680519104,
-    "escala_karnofsky": 0.08186999708414078,
-    "tipo_injerto": 0.07446999847888947,
-    "tipo_producto": 0.06982000172138214,
-    "n_comorbilidades": 0.06757000088691711,
-    "irradiacion_corporal_total": 0.06391000002622604,
-    "edad_donante": 0.043630000203847885,
-    "enfermedad_cardiaca": 0.035750001668930054,
-    "enfermedad_hepatica_severa": 0.0350399985909462,
-    "enfermedad_pulmonar_severa": 0.03116999939084053,
-    "donante_emparentado": 0.01744000054895878,
-    "epitopos_t_inmunogenicidad": 0.015159999951720238,
-    "dif_edad_donante": 0.010499999858438969,
-    "enfermedad_pulmonar_moderada": 0.0086899995803833,
-    "recibio_irradiacion": 0.0081599997356534,
-    "trastorno_psiquiatrico": 0.00795000046491623,
-    "dosis_melfalan": 0.007849999703466892,
-    "ulcera_peptica": 0.006560000125318766,
-    "antecedente_ventilacion": 0.006310000084340572,
-    "enfermedad_renal": 0.0062699997797608376,
-    "enfermedad_reumatologica": 0.005710000172257423,
-    "diabetes": 0.0053400001488626,
-    "epitopos_t_diversidad": 0.004279999993741512,
-    "tumor_previo": 0.004110000096261501,
-    "arritmia": 0.0020099999383091927,
-    "rituximab": 0.0011500000255182385,
-    "obesidad": 0.0006900000153109431,
-    "enfermedad_hepatica_leve": 0.0006699999794363976,
-    "es_pediatrico": 0.0
+    "sexo_donante_receptor": 0.1836400032043457,
+    "intensidad_acondicionamiento": 0.1788100004196167,
+    "profilaxis_injerto_huesped": 0.14005999267101288,
+    "compatibilidad_hla": 0.13809999823570251,
+    "anio_trasplante": 0.13736000657081604,
+    "indice_comorbilidad_sorror": 0.1255899965763092,
+    "puntaje_citogenetico": 0.12213999778032303,
+    "deplecion_celulas_t": 0.1157900020480156,
+    "grupo_riesgo_enfermedad": 0.10824999958276749,
+    "serologia_cmv": 0.10733000189065933,
+    "citogenetica_detalle": 0.0961500033736229,
+    "edad_paciente": 0.09487000107765198,
+    "enfermedad_principal": 0.0933300033211708,
+    "escala_karnofsky": 0.08280999958515167,
+    "tipo_producto": 0.0744900032877922,
+    "irradiacion_corporal_total": 0.06648000329732895,
+    "tipo_injerto": 0.06604000180959702,
+    "n_comorbilidades": 0.06436000019311905,
+    "edad_donante": 0.04114000126719475,
+    "enfermedad_cardiaca": 0.03711999952793121,
+    "enfermedad_pulmonar_severa": 0.03449999913573265,
+    "enfermedad_hepatica_severa": 0.033250000327825546,
+    "donante_emparentado": 0.02232000045478344,
+    "es_pediatrico": 0.012679999694228172,
+    "dosis_melfalan": 0.009720000438392162,
+    "epitopos_t_inmunogenicidad": 0.009359999559819698,
+    "dif_edad_donante": 0.009329999797046185,
+    "epitopos_t_diversidad": 0.009109999984502792,
+    "enfermedad_pulmonar_moderada": 0.007579999975860119,
+    "ulcera_peptica": 0.007369999773800373,
+    "antecedente_ventilacion": 0.007199999876320362,
+    "trastorno_psiquiatrico": 0.006839999929070473,
+    "enfermedad_renal": 0.006579999811947346,
+    "diabetes": 0.006140000186860561,
+    "recibio_irradiacion": 0.005640000104904175,
+    "enfermedad_reumatologica": 0.004920000210404396,
+    "tumor_previo": 0.00394000019878149,
+    "obesidad": 0.0012700000079348683,
+    "arritmia": 0.0010100000072270632,
+    "enfermedad_hepatica_leve": 0.0004299999854993075,
+    "rituximab": 0.0
   },
   "tasa_base": 0.5262936769133815,
   "pacientes_despliegue": 28562,
   "versiones": {
-    "scikit-learn": "1.9.1",
-    "pandas": "3.0.5",
-    "numpy": "2.5.3",
+    "scikit-learn": "1.6.1",
+    "pandas": "2.2.3",
+    "numpy": "2.4.6",
     "joblib": "1.6.0",
-    "xgboost": "3.0.5"
+    "xgboost": "3.4.1"
   }
 }
