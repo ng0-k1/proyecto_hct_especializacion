@@ -70,7 +70,7 @@ def salud():
 
 @app.get("/info")
 def info():
-    return {k: meta[k] for k in ("modelo", "hiperparametros", "umbral", "metricas_prueba", "c_index_estratificado",
+    return {k: meta[k] for k in ("modelo", "hiperparametros", "umbral", "metricas_prueba",
                                  "deciles_prueba", "importancia_shap", "descripciones", "opciones", "rangos", "fuente_diccionario")}
 
 

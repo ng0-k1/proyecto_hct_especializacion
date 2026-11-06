@@ -64,7 +64,7 @@ def tarjeta(rotulo, valor, nota="", color="#1E2933"):
 
 def lienzo(fig, alto):
     fig.update_layout(height=alto, margin=dict(l=10, r=40, t=10, b=10), plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width=True)
 
 
 modelo, meta, fondo, ejemplos = cargar()
@@ -197,18 +197,8 @@ with tab_modelo:
         tarjeta("Recall del evento", f"{metricas['recall del evento']:.1%}", "Eventos detectados con el umbral")
     with c3:
         tarjeta("Balanced accuracy", f"{metricas['balanced accuracy']:.3f}", meta["modelo"])
-    with c4:
-        tarjeta("C-index estratificado", f"{meta['c_index_estratificado']:.3f}", "Métrica de equidad de la competencia")
     st.write("")
-    izq, der = st.columns(2)
-    with izq:
-        st.markdown("Equidad: desempeño por grupo racial")
-        eq = pd.DataFrame(meta["equidad_prueba"])
-        fig = go.Figure()
-        fig.add_trace(go.Bar(x=eq["grupo"], y=eq["AUC"], name="AUC", marker_color=AZUL))
-        fig.add_trace(go.Bar(x=eq["grupo"], y=eq["recall del evento"], name="Recall del evento", marker_color=OCRE))
-        fig.update_layout(barmode="group", yaxis=dict(range=[0.5, 1]), legend=dict(orientation="h", y=-0.45))
-        lienzo(fig, 400)
+    der,_ = st.columns(2)
     with der:
         st.markdown("Las 15 variables más importantes según SHAP")
         imp = pd.Series(meta["importancia_shap"]).sort_values(ascending=False).head(15).iloc[::-1]
@@ -257,6 +247,6 @@ with tab_lote:
         fig.add_vline(x=meta["umbral"], line_color=ROJO, annotation_text="Umbral")
         fig.update_layout(xaxis=dict(tickformat=".0%", title="Riesgo predicho"), yaxis_title="Pacientes")
         lienzo(fig, 280)
-        st.dataframe(resultado, use_container_width=True, height=360)
+        st.dataframe(resultado, width=True, height=360)
         st.download_button("Descargar resultados", resultado.to_csv(index=False).encode("utf-8"),
                            file_name="riesgo_post_trasplante.csv", mime="text/csv")
