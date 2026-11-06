@@ -1,173 +1,165 @@
-# Riesgo post trasplante: guía de despliegue
+# Riesgo post trasplante: guía de instalación y despliegue
 
-Modelo que estima, antes de un trasplante de médula ósea, la probabilidad de que el paciente tenga un evento adverso en los primeros 12 meses (la variable efs de la competencia, supervivencia libre de eventos). El proyecto incluye el notebook de entrenamiento, una API REST con FastAPI y una aplicación web con Streamlit.
+Modelo que estima, antes de un trasplante de médula ósea, la probabilidad de que el paciente tenga un evento adverso en los primeros 12 meses (la variable `efs` de la competencia, supervivencia libre de eventos: recaída, falla del injerto o muerte). El proyecto incluye el notebook de entrenamiento, los artefactos del modelo y una aplicación web en Streamlit para crear, importar, exportar y predecir pacientes, con la explicación de cada predicción.
 
-Autor: [Nombre]
+Autor: Oscar David Perilla Dominguez (código 202624578). Especialización en Inteligencia Artificial, UPTC.
+
+El detalle del proceso y de los resultados está en [reporteTecnico.md](reporteTecnico.md).
+
+## Resultados principales
+
+Cifras de la ejecución guardada del notebook, las mismas que trae `despliegue/artefactos/metadatos.json`:
+
+| Aspecto | Resultado |
+|---|---|
+| Modelo | XGBClassifier ajustado con GridSearchCV (`max_depth=3`, `learning_rate=0.06`, `min_child_weight=1`, `n_estimators=400`) |
+| AUC-ROC en df_test | 0.7410 |
+| Recall y precision del evento | 73.3 % y 67.8 % con el umbral de 0.504 |
+| Separación de riesgo | 13.1 % con evento en el decil de menor riesgo frente a 84.6 % en el de mayor riesgo |
+| Pacientes del modelo desplegado | 28,562 (todo df_model) |
 
 ## Contenido del proyecto
 
 ```text
-proyecto/
-├── README.md                                        Esta guía
-├── reporteTecnico.md                                Reporte técnico con resultados
-├── Proyecto_Final_ML_Riesgo_Post_Trasplante.ipynb   Notebook de entrenamiento (Google Colab)
-├── imagenes/                                        Figuras usadas en el reporte
-├── data/                                            train.csv y data_dictionary.csv de Kaggle
+proyecto_hct_especializacion/
+├── README.md                                              Esta guía
+├── reporteTecnico.md                                      Reporte técnico con el proceso y los resultados
+├── Proyecto_Final_ML_Riesgo_Post_Trasplante_Enviar.ipynb  Notebook de entrenamiento (Google Colab)
+├── requirements.txt                                       Único archivo de dependencias (local y Streamlit Cloud)
+├── .python-version                                        Versión de Python usada (3.12)
+├── .streamlit/config.toml                                 Tema y configuración de la aplicación
+├── data/                                                  Archivos de Kaggle: train.csv, test.csv, data_dictionary.csv
+├── imagenes/                                              Figuras del notebook usadas en el reporte
 └── despliegue/
     ├── app.py                   Aplicación web (Streamlit)
-    ├── api.py                   API REST (FastAPI)
-    ├── procesamiento.py         Preparación de datos y explicaciones, compartido por app y API
-    ├── requirements.txt         Dependencias de la aplicación web
-    ├── requirements-api.txt     Dependencias de la API
-    ├── .streamlit/config.toml   Tema visual de la aplicación
-    └── artefactos/              Modelo entrenado y metadatos (los genera el notebook)
+    ├── procesamiento.py         Limpieza igual a la del notebook, predicción, validación de CSV y explicaciones
+    └── artefactos/              Generados por la sección 13 del notebook
+        ├── preprocesamiento_hct.joblib   ColumnTransformer ajustado
+        ├── modelo_hct.json               XGBClassifier ajustado
+        ├── metadatos.json                Umbral, métricas, deciles, opciones válidas, rangos y reglas de limpieza
+        ├── fondo_shapley.csv             200 pacientes de referencia para las explicaciones
+        ├── pacientes_ejemplo.csv         5 pacientes reales para probar la aplicación
+        └── requirements_modelo.txt       Versiones exactas de las librerías con que se entrenó
 ```
 
 ## Cómo fluye la información
 
 ```mermaid
 flowchart LR
-    A[train.csv de Kaggle] --> B[Notebook en Colab]
-    B --> C[artefactos/modelo_hct.joblib<br>metadatos.json]
-    C --> D[API FastAPI]
-    C --> E[App Streamlit]
-    D --> F[Sistemas externos]
-    E --> G[Equipo clínico]
+    A[data/train.csv<br>data/data_dictionary.csv] --> B[Notebook en Colab]
+    B --> C[despliegue/artefactos/<br>preprocesamiento_hct.joblib<br>modelo_hct.json<br>metadatos.json<br>fondo_shapley.csv<br>pacientes_ejemplo.csv]
+    C --> D[procesamiento.py]
+    D --> E[App Streamlit]
+    F[CSV importado<br>data/test.csv] --> E
+    E --> G[CSV exportado con el riesgo]
 ```
 
-## 1. Preparar los datos
+La aplicación es la única forma de consumir el modelo: no hay API.
+
+## 1. Datos
 
 - Competencia: [CIBMTR, Equity in post-HCT Survival Predictions](https://www.kaggle.com/competitions/equity-post-HCT-survival-predictions/data)
-- Archivos necesarios: `train.csv` y `data_dictionary.csv`, en la carpeta `data/` junto al notebook
-- El notebook los lee directamente:
+- Archivos en `data/`: `train.csv` (28,800 pacientes, 60 columnas), `test.csv` (3 pacientes sin resultado), `data_dictionary.csv` y `sample_submission.csv`
+- El notebook entrena con `train.csv` y toma los nombres en español a partir de `data_dictionary.csv`
+- `test.csv` no sirve para evaluar porque no trae el resultado; la aplicación lo ofrece como archivo de ejemplo en la predicción por lotes
 
-```python
-df_raw = pd.read_csv("data/train.csv")
-df_diccionario = pd.read_csv("data/data_dictionary.csv")
-```
+## 2. Entrenar el modelo (opcional)
 
-El `test.csv` de la competencia no se usa: solo trae 3 pacientes y no incluye el resultado.
+Los artefactos ya están en `despliegue/artefactos/`; este paso solo hace falta para volver a generarlos.
 
-## 2. Entrenar el modelo en Google Colab
+1. Subir el notebook a Google Colab y crear la carpeta `data/` con `train.csv` y `data_dictionary.csv`
+2. Ejecutar todas las celdas (Entorno de ejecución > Ejecutar todas)
+3. La sección 13 crea la carpeta `artefactos/` con los seis archivos de la tabla de arriba
+4. Descargarla y reemplazar `despliegue/artefactos/`
 
-- Subir el notebook a Colab y crear la carpeta `data/` con los dos archivos
-- Ejecutar todas las celdas (Entorno de ejecución > Ejecutar todas). Tarda entre 10 y 20 minutos según la máquina asignada
-- Al final se crea la carpeta `artefactos/` con:
+> El preprocesamiento se guarda con joblib, así que la aplicación debe usar las mismas versiones de scikit-learn, pandas, numpy y xgboost con que se entrenó. Están en `despliegue/artefactos/requirements_modelo.txt` y `requirements.txt` las repite. Si se reentrena con otras versiones, hay que copiarlas en `requirements.txt`.
 
-| Archivo | Contenido |
-|---|---|
-| `modelo_hct.joblib` | Pipeline de scikit-learn: SimpleImputer, StandardScaler, OneHotEncoder, PCA y el modelo |
-| `metadatos.json` | Umbral, métricas, nombres de variables, reglas de limpieza, opciones válidas y deciles de riesgo |
-| `fondo_shapley.csv` | 200 pacientes de referencia para las explicaciones |
-| `pacientes_ejemplo.csv` | 5 pacientes para probar la app y la API |
-| `requirements_modelo.txt` | Versiones exactas de las librerías usadas al entrenar |
+## 3. Ejecutar la aplicación en local
 
-- Descargar `artefactos/` y reemplazar la carpeta `despliegue/artefactos/`
-
-> El modelo se guarda con joblib, así que la app y la API deben usar las mismas versiones de scikit-learn, xgboost, pandas y numpy. Copie las versiones de `requirements_modelo.txt` en `requirements.txt` y `requirements-api.txt`.
-
-## 3. Ejecutar la API en local
+Requiere Python 3.12. Todos los comandos se ejecutan desde la raíz del proyecto, para que Streamlit lea `.streamlit/config.toml`.
 
 ```bash
-cd despliegue
-pip install -r requirements-api.txt
-uvicorn api:app --reload --port 8000
-```
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS o Linux
+source .venv/bin/activate
 
-La documentación interactiva queda en `http://localhost:8000/docs`.
-
-| Método | Ruta | Qué devuelve |
-|---|---|---|
-| GET | `/salud` | Estado de la API y nombre del modelo |
-| GET | `/info` | Umbral, métricas, deciles, importancia SHAP y diccionario de variables |
-| GET | `/ejemplo?indice=0` | Un paciente de ejemplo listo para enviar a `/predecir` |
-| POST | `/predecir` | Riesgo a 12 meses, nivel (bajo, intermedio, alto) y si supera el umbral |
-| POST | `/explicar` | Lo anterior más la contribución de cada variable al riesgo |
-| POST | `/predecir/lote` | Una lista de pacientes, hasta 5,000 por solicitud |
-
-Ejemplo de solicitud con algunos campos. Los datos se limpian igual que en el notebook: un dato genético vacío se toma como No aplica y los demás se completan con la mediana o el valor más frecuente del entrenamiento. Cada campo acepta el nombre en español o el nombre original de Kaggle (por ejemplo edad_paciente o age_at_hct):
-
-```bash
-curl -X POST http://localhost:8000/predecir \
-  -H "Content-Type: application/json" \
-  -d '{"edad_paciente": 62, "edad_donante": 35, "enfermedad_principal": "AML",
-       "indice_riesgo_enfermedad": "High", "escala_karnofsky": 70,
-       "indice_comorbilidad_sorror": 4, "intensidad_acondicionamiento": "MAC",
-       "tipo_injerto": "Peripheral blood", "donante_emparentado": "Unrelated"}'
-```
-
-Respuesta:
-
-```json
-{
-  "riesgo_evento_12m": 0.5145,
-  "alto_riesgo": false,
-  "umbral": 0.5183,
-  "nivel": "Intermedio",
-  "riesgo_promedio_cohorte": 0.5263,
-  "variables_sin_dato": 44
-}
-```
-
-Probar con un paciente completo:
-
-```bash
-curl -s http://localhost:8000/ejemplo?indice=0 > paciente.json
-curl -X POST http://localhost:8000/explicar -H "Content-Type: application/json" -d @paciente.json
-```
-
-## 4. Ejecutar la aplicación web en local
-
-```bash
-cd despliegue
 pip install -r requirements.txt
-streamlit run app.py
+streamlit run despliegue/app.py
 ```
 
-La aplicación tiene cuatro pestañas:
+La aplicación abre en `http://localhost:8501`.
 
-- **Riesgo**: probabilidad de evento, nivel de riesgo y dónde queda el paciente frente a los deciles de la cohorte
-- **Por qué lo predice**: gráfico de cascada con lo que sube y baja el riesgo de ese paciente
-- **Cómo funciona el modelo**: métricas en prueba, equidad por grupo e importancia SHAP
-- **Evaluar un lote**: carga de un CSV con muchos pacientes y descarga de resultados
+## 4. Uso de la aplicación
 
-## 5. Publicar la aplicación en Streamlit Community Cloud
+### Un paciente: crear, importar, predecir y exportar
 
-1. Subir el proyecto a un repositorio de GitHub (incluida `despliegue/artefactos/`)
-2. Entrar a [share.streamlit.io](https://share.streamlit.io) y elegir **Create app**
-3. Seleccionar el repositorio, la rama y como archivo principal `despliegue/app.py`
-4. En **Advanced settings** elegir Python 3.12 o 3.13
-5. **Deploy**. Streamlit instala `despliegue/requirements.txt` y aplica el tema de `.streamlit/config.toml`
+En el panel lateral se elige el punto de partida:
+
+| Punto de partida | Qué hace |
+|---|---|
+| Paciente de ejemplo | Precarga uno de los 5 pacientes reales de `pacientes_ejemplo.csv` |
+| Formulario en blanco | Todos los campos vacíos para llenarlos desde cero |
+| Importar CSV | Carga un archivo con uno o varios pacientes y deja elegir cuál llevar al formulario |
+
+Después de revisar o completar los datos se pulsa **Predecir riesgo**. La predicción solo se calcula al pulsar el botón.
+
+| Pestaña | Contenido |
+|---|---|
+| Paciente | Riesgo a 12 meses, nivel (bajo, intermedio o alto), alerta según el umbral, posición frente a los deciles de df_test, datos usados en la predicción y botones para exportar |
+| Por qué lo predice | Gráfico de cascada con los factores que suben o bajan el riesgo de ese paciente |
+| Predicción por lotes | Importa un CSV (o usa `data/test.csv` o `pacientes_ejemplo.csv`), revisa columnas y valores, predice con **Predecir lote** y exporta los resultados |
+| Cómo funciona el modelo | Métricas en df_test, deciles, importancia SHAP del notebook, hiperparámetros, límites y diccionario de variables |
+
+Los campos vacíos se completan igual que en el notebook: las variables genéticas (HLA, citogenética y epítopos de células T) quedan como `No aplica` y las demás toman la mediana o el valor más frecuente del entrenamiento. Cada campo vacío muestra qué valor se va a usar.
+
+### Formato del CSV
+
+- Acepta los nombres de columnas de Kaggle (los de `train.csv` y `test.csv`) o los nombres en español del notebook
+- Las columnas que falten quedan como `Sin dato`; las columnas extra (`ID`, `efs`, `race_group`, etc.) se conservan en el resultado pero no se usan para predecir
+- Separador coma o punto y coma (como lo guarda Excel en español)
+- Hasta 30,000 filas y 50 MB por archivo
+- La aplicación ofrece una plantilla vacía y avisa si hay categorías que el modelo no conoce o valores fuera del rango del entrenamiento
+- El CSV exportado de un paciente usa los nombres de Kaggle, así que se puede volver a importar tal cual
+
+Columnas que agrega la predicción:
+
+| Columna | Significado |
+|---|---|
+| `riesgo_evento_12m` | Probabilidad de evento en 12 meses |
+| `nivel` | Bajo hasta el riesgo medio del decil 3 de df_test (37.6 %), alto desde el del decil 8 (67.8 %) |
+| `alto_riesgo` | `True` si el riesgo supera el umbral de 0.504 |
+| `variables_sin_dato` | Cuántas de las 53 variables del formulario venían vacías |
+
+### Explicabilidad
+
+La pestaña **Por qué lo predice** solo aparece si `fondo_shapley.csv` existe, trae las 53 variables del formulario y tiene al menos 50 pacientes. Calcula valores de Shapley del modelo desplegado por muestreo de permutaciones, usando esos 200 pacientes como referencia; las 17 variables HLA se tratan como un solo factor, igual que `compatibilidad_hla` en el notebook. Las contribuciones están en puntos de probabilidad y, sumadas al riesgo de referencia, dan exactamente el riesgo del paciente. No requiere instalar la librería `shap`.
+
+## 5. Publicar gratis en Streamlit Community Cloud
+
+1. Subir el proyecto a un repositorio de GitHub, incluidas las carpetas `despliegue/artefactos/`, `data/` y `.streamlit/`
+2. Entrar a [share.streamlit.io](https://share.streamlit.io) con la cuenta de GitHub y elegir **Create app**
+3. Elegir el repositorio, la rama y como archivo principal `despliegue/app.py`
+4. En **Advanced settings** elegir Python 3.12
+5. **Deploy**. Streamlit instala `requirements.txt` de la raíz y aplica el tema de `.streamlit/config.toml`
 
 ```text
-Repository:      usuario/riesgo-post-trasplante
+Repository:      usuario/proyecto_hct_especializacion
 Branch:          main
 Main file path:  despliegue/app.py
+Python version:  3.12
 ```
 
-## 6. Publicar la API
-
-Cualquier servicio que ejecute Python sirve (Render, Railway, Azure App Service). El comando de inicio es:
-
-```bash
-cd despliegue && uvicorn api:app --host 0.0.0.0 --port $PORT
-```
-
-Ejemplo de `Dockerfile` dentro de `despliegue/`:
-
-```dockerfile
-FROM python:3.12-slim
-WORKDIR /app
-COPY . .
-RUN pip install --no-cache-dir -r requirements-api.txt
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
-```
+El plan gratuito duerme la aplicación tras unos días sin visitas; al abrirla de nuevo se reactiva en cerca de un minuto. Cada `git push` a la rama vuelve a desplegarla.
 
 ## Problemas frecuentes
 
 | Síntoma | Causa | Solución |
 |---|---|---|
-| `ModuleNotFoundError: procesamiento` | `procesamiento.py` no está junto a la app | Mantener `procesamiento.py` en la misma carpeta que `app.py` y `api.py` |
-| La predicción no coincide con el notebook | La función `limpiar_datos` de `procesamiento.py` cambió | Debe ser idéntica a la de la sección 3 del notebook |
-| Advertencia de versión al cargar el modelo | Versiones distintas de scikit-learn o xgboost | Usar las versiones de `requirements_modelo.txt` |
-| Error 422 en la API | Un valor categórico no existe en el entrenamiento | Consultar las opciones válidas en `GET /info` |
+| `ModuleNotFoundError: procesamiento` | `procesamiento.py` no está junto a `app.py` | Mantener los dos archivos en `despliegue/` |
+| La aplicación se ve sin el tema azul | Streamlit se ejecutó desde otra carpeta | Ejecutar `streamlit run despliegue/app.py` desde la raíz |
+| Error al cargar `preprocesamiento_hct.joblib` o advertencia de versión | Versiones distintas de scikit-learn, pandas, numpy o xgboost | Instalar `requirements.txt` en un entorno limpio con Python 3.12 |
+| No aparece la pestaña Por qué lo predice | Falta `fondo_shapley.csv` o no trae las variables del formulario | Copiar el archivo que genera la sección 13 del notebook |
+| La predicción no coincide con el notebook | `limpiar_datos` de `procesamiento.py` cambió | Debe ser idéntica a la de la sección 3 del notebook |
+| Aviso de valores no vistos en el entrenamiento | Una categoría del CSV no existe en los datos de Kaggle | Revisar las opciones válidas en el diccionario de la pestaña Cómo funciona el modelo |
