@@ -6,6 +6,9 @@ El modelo exportado es un Pipeline de scikit-learn con clases estándar, así qu
 from pathlib import Path
 import json
 
+import xgboost as xgb
+from sklearn.pipeline import Pipeline
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -61,11 +64,32 @@ def limpiar_datos(df, columnas_eliminadas, variables_geneticas):
 
 
 def cargar_artefactos(carpeta=CARPETA_ARTEFACTOS):
-    modelo = joblib.load(carpeta / "modelo_hct.joblib")
-    meta = json.loads((carpeta / "metadatos.json").read_text(encoding="utf-8"))
-    fondo = formulario(pd.read_csv(carpeta / "fondo_shapley.csv"), meta)
-    ejemplos = formulario(pd.read_csv(carpeta / "pacientes_ejemplo.csv"), meta)
+    # Recuperar el preprocesamiento
+    preprocesamiento = joblib.load(
+        carpeta / "preprocesamiento_hct.joblib"
+    )
+    # Recuperar el estimador XGBoost
+    estimador = xgb.XGBClassifier()
+    estimador.load_model(carpeta / "modelo_hct.json")
+    # Reconstruir el Pipeline original
+    modelo = Pipeline([
+        ("columnTransformer", preprocesamiento),
+        ("modelo", estimador)
+    ])
+    # Recuperar metadatos y datos auxiliares
+    meta = json.loads(
+        (carpeta / "metadatos.json").read_text(encoding="utf-8")
+    )
+    fondo = formulario(
+        pd.read_csv(carpeta / "fondo_shapley.csv"),
+        meta
+    )
+    ejemplos = formulario(
+        pd.read_csv(carpeta / "pacientes_ejemplo.csv"),
+        meta
+    )
     return modelo, meta, fondo, ejemplos
+
 
 
 def formulario(df, meta):
