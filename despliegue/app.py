@@ -12,7 +12,7 @@ import streamlit as st
 
 import procesamiento as proc
 
-st.set_page_config(page_title="Riesgo post trasplante", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Riesgo post trasplante", layout="wide", initial_sidebar_state="expanded", page_icon="🩺")
 
 AZUL, ROJO, OCRE, VERDE, TINTA, CLARO = "#2F5D8A", "#B5443B", "#C08A2B", "#3E7C5A", "#1E2933", "#CBD5DF"
 COLOR_NIVEL = {"Bajo": VERDE, "Intermedio": OCRE, "Alto": ROJO}
