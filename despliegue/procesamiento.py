@@ -1,7 +1,8 @@
 """Preparación de datos, predicción y explicación que usa la aplicación web (app.py).
 
-NOMBRES, COMORBILIDADES, GRUPO_RIESGO y limpiar_datos son copia exacta de las secciones 2 y 3 del notebook
-Proyecto_Final_ML_Riesgo_Post_Trasplante_Enviar.ipynb. Si cambian allá, deben cambiar aquí.
+NOMBRES, las listas de columnas, GRUPO_RIESGO y limpiar_datos son copia exacta de las secciones 2 y 3 del notebook
+Proyecto_Final_ML_Riesgo_Post_Trasplante_Enviar.ipynb; MAXIMO_HLA, nivel_hla, GRUPOS_ESCALAS y agrupar_variables, de las
+secciones 5 y 6. Si cambian allá, deben cambiar aquí. cargar_artefactos comprueba que las listas coincidan con metadatos.json.
 
 Artefactos que consume (los exporta la sección 13 del notebook a despliegue/artefactos/):
     modelo_hct.joblib       Pipeline completo de scikit-learn (preprocesamiento y modelo elegido), reentrenado con todo df_model
@@ -53,6 +54,9 @@ NOMBRES = {
 }
 NOMBRES_ORIGINALES = {nuevo: original for original, nuevo in NOMBRES.items()}
 
+COLUMNAS_HLA = sorted(c for c in NOMBRES.values() if c.startswith("hla_"))
+VARIABLES_GENETICAS = ["citogenetica_detalle", "epitopos_t_diversidad", "epitopos_t_inmunogenicidad", "puntaje_citogenetico"]
+COLUMNAS_ENTERAS = ["edad_paciente", "edad_donante", "indice_comorbilidad_sorror", "escala_karnofsky"]
 COMORBILIDADES = ["trastorno_psiquiatrico", "diabetes", "arritmia", "enfermedad_renal", "enfermedad_pulmonar_severa",
                   "enfermedad_pulmonar_moderada", "enfermedad_hepatica_severa", "enfermedad_hepatica_leve", "obesidad",
                   "tumor_previo", "ulcera_peptica", "enfermedad_reumatologica", "enfermedad_cardiaca"]
@@ -64,18 +68,52 @@ GRUPO_RIESGO = {
 }
 
 
-def limpiar_datos(df, columnas_eliminadas, variables_geneticas):
+def limpiar_datos(df, columnas_eliminadas):
     df = df.rename(columns=NOMBRES).drop(columns=columnas_eliminadas, errors="ignore")
-    for c in variables_geneticas:
-        if c in df.columns:
-            texto = df[c].map(lambda v: f"{v:g}" if isinstance(v, (int, float)) and not pd.isna(v) else v)
-            df[c] = texto.fillna("No aplica").astype(str)
-    df["dif_edad_donante"] = df["edad_donante"] - df["edad_paciente"]
-    df["es_pediatrico"] = (df["edad_paciente"] < 18).astype(int)
+    # Genéticas de texto sin dato como No aplica
+    for c in VARIABLES_GENETICAS:
+        df[c] = df[c].astype(object).where(df[c].notna(), "No aplica").astype(str)
+    # HLA como conteo entero con -1 cuando no hay dato
+    for c in COLUMNAS_HLA:
+        df[c] = pd.to_numeric(df[c], errors="coerce").fillna(-1).astype(int)
+    # Edades en años cumplidos y escalas como enteros
+    df[["edad_paciente", "edad_donante"]] = np.floor(df[["edad_paciente", "edad_donante"]].astype(float))
+    for c in COLUMNAS_ENTERAS:
+        df[c] = pd.to_numeric(df[c], errors="coerce").astype("Int64")
+    # Variables nuevas
+    df["dif_edad_donante"] = (df["edad_donante"] - df["edad_paciente"]).abs()
+    df["es_pediatrico"] = (df["edad_paciente"] < 18).astype("Int64")
     df["n_comorbilidades"] = (df[COMORBILIDADES] == "Yes").sum(axis=1)
-    df["recibio_irradiacion"] = (df["irradiacion_corporal_total"] != "No TBI").astype(int)
+    irradiacion = df["irradiacion_corporal_total"]
+    df["recibio_irradiacion"] = (irradiacion != "No TBI").astype("Int64").where(irradiacion.notna())
     df["grupo_riesgo_enfermedad"] = df["indice_riesgo_enfermedad"].map(GRUPO_RIESGO).fillna(df["indice_riesgo_enfermedad"])
     return df.drop(columns=["indice_riesgo_enfermedad"])
+
+
+MAXIMO_HLA = {c: 2 if c.endswith("_res") else int(c.rsplit("_", 1)[1]) for c in COLUMNAS_HLA}
+GRUPOS_ESCALAS = {
+    "indice_comorbilidad_sorror": ([-np.inf, 0, 2, np.inf], ["0", "1 a 2", "3 o más"]),
+    "escala_karnofsky": ([-np.inf, 60, 80, np.inf], ["60 o menos", "70 a 80", "90 a 100"]),
+    "n_comorbilidades": ([-np.inf, 0, 1, 2, np.inf], ["0", "1", "2", "3 o más"]),
+}
+
+
+def nivel_hla(valores, maximo):
+    fraccion = valores / maximo
+    return pd.Series(np.select([valores < 0, fraccion >= 0.8, fraccion >= 0.4], ["Sin dato", "Alta", "Media"], "Baja"),
+                     index=valores.index)
+
+
+def agrupar_variables(df, variables):
+    # Cambia cada variable indicada por su grupo con cortes fijos
+    df = df.copy()
+    for c in variables:
+        if c in COLUMNAS_HLA:
+            df[c] = nivel_hla(df[c], MAXIMO_HLA[c])
+        else:
+            cortes, etiquetas = GRUPOS_ESCALAS[c]
+            df[c] = pd.cut(df[c].astype(float), cortes, labels=etiquetas).astype(object)
+    return df
 
 
 # Carga de artefactos
@@ -91,6 +129,9 @@ def cargar_artefactos(carpeta=CARPETA_ARTEFACTOS):
     y la aplicación oculta la sección de explicabilidad."""
     modelo = joblib.load(carpeta / ARTEFACTOS["modelo"])
     meta = json.loads((carpeta / ARTEFACTOS["metadatos"]).read_text(encoding="utf-8"))
+    for clave, local in (("variables_geneticas", VARIABLES_GENETICAS), ("columnas_hla", COLUMNAS_HLA)):
+        if sorted(meta.get(clave, [])) != sorted(local):
+            raise ValueError(f"{clave} de metadatos.json no coincide con procesamiento.py: vuelva a copiar la limpieza del notebook")
     ejemplos_crudos = pd.read_csv(carpeta / ARTEFACTOS["ejemplos"])
     ejemplos = formulario(ejemplos_crudos, meta)
     ejemplos.index = ejemplos_crudos["ID"].astype(str) if "ID" in ejemplos_crudos else ejemplos.index.astype(str)
@@ -107,12 +148,17 @@ def cargar_fondo(ruta, meta):
 
 
 def valores_imputacion(modelo, meta):
-    """Valor con el que el Pipeline completa cada variable del formulario cuando llega vacía."""
+    """Valor con el que la limpieza o el Pipeline completan cada variable del formulario cuando llega vacía."""
     valores = {c: "No aplica" for c in meta["variables_geneticas"]}
+    valores.update({c: "-1 (nivel Sin dato)" if c in meta.get("variables_agrupadas", []) else "-1" for c in meta["columnas_hla"]})
     for nombre, transformador, columnas in modelo.named_steps["columnTransformer"].transformers_:
-        if nombre in ("num", "cat"):
+        if nombre in ("continuas", "categoricas"):
             imputador = transformador.named_steps["simpleImputer"]
-            valores.update({c: v for c, v in zip(columnas, imputador.statistics_) if c not in valores})
+        elif nombre == "binarias":
+            imputador = transformador
+        else:
+            continue
+        valores.update({c: v for c, v in zip(columnas, imputador.statistics_) if c not in valores})
     if "grupo_riesgo_enfermedad" in valores:
         valores["indice_riesgo_enfermedad"] = f"grupo {valores['grupo_riesgo_enfermedad']}"
     return valores
@@ -136,9 +182,9 @@ def formulario(df, meta):
 
 
 def preparar_entrada(df, meta):
-    """Aplica la misma limpieza del notebook y entrega las columnas que recibe el modelo."""
-    limpio = limpiar_datos(formulario(df, meta), meta["columnas_eliminadas"], meta["variables_geneticas"])
-    return limpio[meta["columnas_entrada"]]
+    """Aplica la misma limpieza y representación del notebook y entrega las columnas que recibe el modelo."""
+    limpio = limpiar_datos(formulario(df, meta), meta["columnas_eliminadas"])
+    return agrupar_variables(limpio[meta["columnas_entrada"]], meta.get("variables_agrupadas", []))
 
 
 def columnas_faltantes(df, meta):

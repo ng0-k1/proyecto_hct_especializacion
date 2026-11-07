@@ -20,8 +20,7 @@ SIN_DATO = "Sin dato"
 MAX_FILAS_LOTE = 30_000
 
 GRUPOS = {
-    "Paciente": ["edad_paciente", "escala_karnofsky", "indice_comorbilidad_sorror", "antecedente_ventilacion", "serologia_cmv",
-                 "anio_trasplante"],
+    "Paciente": ["edad_paciente", "escala_karnofsky", "indice_comorbilidad_sorror", "antecedente_ventilacion", "serologia_cmv"],
     "Enfermedad": ["enfermedad_principal", "indice_riesgo_enfermedad", "puntaje_citogenetico", "citogenetica_detalle"],
     "Donante e injerto": ["edad_donante", "donante_emparentado", "sexo_donante_receptor", "tipo_injerto", "tipo_producto"],
     "Tratamiento": ["intensidad_acondicionamiento", "irradiacion_corporal_total", "profilaxis_injerto_huesped", "deplecion_celulas_t",
@@ -33,12 +32,12 @@ GRUPOS = {
     "Epítopos de células T": ["epitopos_t_inmunogenicidad", "epitopos_t_diversidad"],
 }
 ETIQUETAS = {
-    "edad_paciente": "Edad del paciente (años)", "escala_karnofsky": "Escala de Karnofsky",
+    "edad_paciente": "Edad del paciente (años cumplidos)", "escala_karnofsky": "Escala de Karnofsky",
     "indice_comorbilidad_sorror": "Índice de comorbilidad de Sorror", "antecedente_ventilacion": "Antecedente de ventilación mecánica",
-    "serologia_cmv": "Serología CMV (donante/receptor)", "anio_trasplante": "Año del trasplante",
+    "serologia_cmv": "Serología CMV (donante/receptor)",
     "enfermedad_principal": "Enfermedad principal", "indice_riesgo_enfermedad": "Índice de riesgo de la enfermedad (DRI)",
     "puntaje_citogenetico": "Puntaje citogenético", "citogenetica_detalle": "Citogenética para DRI (AML/MDS)",
-    "edad_donante": "Edad del donante (años)", "donante_emparentado": "Donante emparentado",
+    "edad_donante": "Edad del donante (años cumplidos)", "donante_emparentado": "Donante emparentado",
     "sexo_donante_receptor": "Sexo donante-receptor", "tipo_injerto": "Tipo de injerto", "tipo_producto": "Tipo de producto",
     "intensidad_acondicionamiento": "Intensidad del acondicionamiento", "irradiacion_corporal_total": "Irradiación corporal total (TBI)",
     "profilaxis_injerto_huesped": "Profilaxis injerto contra huésped", "deplecion_celulas_t": "Depleción de células T in vivo",
@@ -51,9 +50,9 @@ ETIQUETAS = {
     "epitopos_t_inmunogenicidad": "Epítopos T: inmunogenicidad", "epitopos_t_diversidad": "Epítopos T: diversidad",
     "compatibilidad_hla": "Compatibilidad HLA", "grupo_riesgo_enfermedad": "Grupo de riesgo de la enfermedad",
     "n_comorbilidades": "Número de comorbilidades", "es_pediatrico": "Paciente pediátrico",
-    "dif_edad_donante": "Diferencia de edad donante-paciente", "recibio_irradiacion": "Recibió irradiación",
+    "dif_edad_donante": "Diferencia de edad donante-paciente (años, sin signo)", "recibio_irradiacion": "Recibió irradiación",
 }
-PASOS = {"edad_paciente": (1.0, "%.1f"), "edad_donante": (1.0, "%.1f"), "escala_karnofsky": (10.0, "%.0f")}
+PASOS = {"escala_karnofsky": (10.0, "%.0f")}
 LECTURA = {
     "Alto": "El perfil se parece al de los pacientes con mayor tasa de eventos en el primer año. Puede justificar un plan de "
             "seguimiento más estrecho y revisar con anticipación las alternativas de donante y de tratamiento.",
@@ -135,7 +134,7 @@ def texto_imputacion(c):
         return "valor típico"
     if isinstance(v, (int, float, np.number)):
         return f"mediana {float(v):.4g}"
-    if v == "No aplica" or c == "indice_riesgo_enfermedad":
+    if v == "No aplica" or c == "indice_riesgo_enfermedad" or c in meta["columnas_hla"]:
         return v
     return f"más frecuente: {v}"
 
@@ -279,8 +278,9 @@ with st.sidebar:
                 for c in columnas:
                     valores[c] = campo(c, base, clave)
         predecir_individual = st.form_submit_button("Predecir riesgo", type="primary", width="stretch")
-    st.caption("Un dato vacío se completa igual que en el notebook: las variables genéticas (HLA, citogenética y epítopos de "
-               "células T) quedan como No aplica y las demás toman la mediana o el valor más frecuente del entrenamiento.")
+    st.caption("Un dato vacío se completa igual que en el notebook: las 17 variables HLA quedan en -1 (nivel Sin dato), la "
+               "citogenética y los epítopos de células T como No aplica y las demás toman la mediana o el valor más frecuente "
+               "del entrenamiento. Las edades se toman en años cumplidos.")
 
 if predecir_individual:
     paciente = proc.formulario(pd.DataFrame([{c: (np.nan if valores[c] is None else valores[c]) for c in VARIABLES}]), meta)
@@ -394,7 +394,7 @@ if HAY_EXPLICACION:
             def rotulo_factor(c):
                 if c == proc.GRUPO_HLA:
                     v = paciente["hla_alta_res_8"].iloc[0]
-                    return f"{etiqueta(c)}: {'No aplica' if pd.isna(v) else f'{v:.0f} de 8'}"
+                    return f"{etiqueta(c)}: {'Sin dato' if pd.isna(v) else f'{v:.0f} de 8'}"
                 return f"{etiqueta(c)}: {texto_valor(paciente[c].iloc[0])}"
 
             etiquetas = ["Riesgo de referencia"] + [rotulo_factor(c) for c in top.index]
@@ -588,14 +588,17 @@ pacientes y 57 variables registradas antes del trasplante. Son datos sintéticos
 real. El evento es `efs = 1` dentro de los primeros 12 meses; se excluyen los 238 pacientes sin evento que salieron del
 seguimiento antes del año.
 
-**Método.** Variables con más de 50% de nulos eliminadas ({', '.join(meta['columnas_eliminadas'])}), vacíos genéticos marcados
-como No aplica y cinco variables nuevas; SimpleImputer, StandardScaler, OneHotEncoder y PCA sobre el bloque HLA dentro de un
-Pipeline; seis modelos comparados con validación cruzada estratificada de 10 pliegues y la prueba de Wilcoxon; GridSearchCV sobre
-el mejor (5 pliegues); umbral fijado en df_val; evaluación única en df_test con intervalos de confianza por bootstrap;
-explicabilidad con SHAP e importancia por permutación. Todo el proceso queda registrado en MLflow.
+**Método.** Variables con más de 50% de nulos eliminadas ({', '.join(meta['columnas_eliminadas'])}); edades en años cumplidos
+y escalas como números enteros; las 17 variables HLA con -1 cuando la prueba no se hizo y agrupadas en cuatro niveles (Sin dato,
+Baja, Media y Alta); citogenética y epítopos sin dato como No aplica; cinco variables nuevas; el año del trasplante no se usa
+como predictor. Dentro de un Pipeline: las continuas y escalas se imputan con la mediana y se escalan con StandardScaler, las
+binarias se dejan en 0 y 1 y las categóricas y los niveles HLA pasan por OneHotEncoder. Seis modelos comparados con validación
+cruzada estratificada de 10 pliegues y la prueba de Wilcoxon; GridSearchCV sobre el mejor (5 pliegues); umbral fijado en df_val;
+evaluación única en df_test con intervalos de confianza por bootstrap; explicabilidad con SHAP e importancia por permutación.
+Todo el proceso queda registrado en MLflow.
 
 **Límites.** Los trasplantes son de 2008 a 2020 y la validación no separó por fechas, así que no garantiza el desempeño en
-años futuros. En niños y en injertos de médula ósea el umbral general detecta pocos eventos porque su riesgo base es menor.
+años futuros. La ventaja del modelo elegido sobre la regresión logística no es significativa: los dos ordenan el riesgo casi igual. En niños y en injertos de médula ósea el umbral general detecta pocos eventos porque su riesgo base es menor.
 Para usarlo en otro país o centro hay que validarlo y recalibrarlo con datos locales. Es una herramienta académica de apoyo,
 no un dispositivo médico.
 """)
