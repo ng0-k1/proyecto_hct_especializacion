@@ -1,0 +1,17 @@
+variable,efecto,valor,pacientes,SHAP medio (log-odds),puntos de riesgo sobre un paciente promedio
+sexo_donante_receptor,sube,F-M,541,0.26974037,6.637808293512371
+sexo_donante_receptor,baja,M-M,549,-0.2397912,-5.987278014013264
+intensidad_acondicionamiento,sube,RIC,575,0.33557627,8.217051238229779
+intensidad_acondicionamiento,baja,Sin dato,331,-0.13575783,-3.39147785265157
+profilaxis_injerto_huesped,sube,FK+ MMF +- others,740,0.21761817,5.373635501077678
+profilaxis_injerto_huesped,baja,Cyclophosphamide +- others,159,-0.32702032,-8.150408058950397
+grupo_riesgo_enfermedad,sube,Alto,446,0.27835226,6.845554322412517
+grupo_riesgo_enfermedad,baja,No aplica,514,-0.1401869,-3.502169638463948
+enfermedad_principal,sube,ALL,563,0.11222476,2.78678199689677
+enfermedad_principal,baja,IIS,67,-0.48340595,-11.97144427854726
+indice_comorbilidad_sorror,sube,6,50,0.4801609,11.602839440515545
+indice_comorbilidad_sorror,baja,1,357,-0.14024541,-3.5036359127254224
+compatibilidad_hla,sube,Alta,1148,0.04868822,1.2120690051822924
+compatibilidad_hla,baja,Sin dato,393,-0.123177916,-3.077027588674519
+serologia_cmv,sube,-/+,485,0.22985058,5.671330899408367
+serologia_cmv,baja,+/-,278,-0.29049474,-7.2467062767238355

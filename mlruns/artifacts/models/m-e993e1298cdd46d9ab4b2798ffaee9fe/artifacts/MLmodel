@@ -1,0 +1,77 @@
+artifact_path: file:///C:/Users/operi/OneDrive/Desktop/proyecto_hct_especializacion/mlruns/artifacts/models/m-e993e1298cdd46d9ab4b2798ffaee9fe/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.12.10
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.6.1
+    skops_trusted_types: null
+is_signature_from_type_hint: false
+mlflow_version: 3.18.0
+model_id: m-e993e1298cdd46d9ab4b2798ffaee9fe
+model_size_bytes: 743875
+model_uuid: m-e993e1298cdd46d9ab4b2798ffaee9fe
+prompts: null
+run_id: 681545317ccb4bc9b8187ee63768a3cc
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "string", "name": "trastorno_psiquiatrico", "required": true},
+    {"type": "string", "name": "puntaje_citogenetico", "required": true}, {"type":
+    "string", "name": "diabetes", "required": true}, {"type": "string", "name": "hla_c_alta_res",
+    "required": true}, {"type": "string", "name": "hla_alta_res_8", "required": true},
+    {"type": "string", "name": "irradiacion_corporal_total", "required": true}, {"type":
+    "string", "name": "arritmia", "required": true}, {"type": "string", "name": "hla_baja_res_6",
+    "required": true}, {"type": "string", "name": "tipo_injerto", "required": true},
+    {"type": "string", "name": "antecedente_ventilacion", "required": true}, {"type":
+    "string", "name": "enfermedad_renal", "required": true}, {"type": "string", "name":
+    "enfermedad_pulmonar_severa", "required": true}, {"type": "string", "name": "enfermedad_principal",
+    "required": true}, {"type": "string", "name": "hla_alta_res_6", "required": true},
+    {"type": "string", "name": "serologia_cmv", "required": true}, {"type": "string",
+    "name": "hla_alta_res_10", "required": true}, {"type": "string", "name": "hla_dqb1_alta_res",
+    "required": true}, {"type": "string", "name": "epitopos_t_inmunogenicidad", "required":
+    true}, {"type": "string", "name": "hla_nmdp_6", "required": true}, {"type": "string",
+    "name": "hla_c_baja_res", "required": true}, {"type": "string", "name": "rituximab",
+    "required": true}, {"type": "string", "name": "hla_drb1_baja_res", "required":
+    true}, {"type": "string", "name": "hla_dqb1_baja_res", "required": true}, {"type":
+    "string", "name": "tipo_producto", "required": true}, {"type": "string", "name":
+    "citogenetica_detalle", "required": true}, {"type": "string", "name": "intensidad_acondicionamiento",
+    "required": true}, {"type": "string", "name": "obesidad", "required": true}, {"type":
+    "string", "name": "deplecion_celulas_t", "required": true}, {"type": "string",
+    "name": "hla_a_alta_res", "required": true}, {"type": "string", "name": "enfermedad_hepatica_severa",
+    "required": true}, {"type": "long", "name": "edad_donante", "required": true},
+    {"type": "string", "name": "tumor_previo", "required": true}, {"type": "string",
+    "name": "hla_b_baja_res", "required": true}, {"type": "string", "name": "ulcera_peptica",
+    "required": true}, {"type": "long", "name": "edad_paciente", "required": true},
+    {"type": "string", "name": "hla_a_baja_res", "required": true}, {"type": "string",
+    "name": "profilaxis_injerto_huesped", "required": true}, {"type": "string", "name":
+    "enfermedad_reumatologica", "required": true}, {"type": "string", "name": "sexo_donante_receptor",
+    "required": true}, {"type": "string", "name": "hla_b_alta_res", "required": true},
+    {"type": "long", "name": "indice_comorbilidad_sorror", "required": true}, {"type":
+    "long", "name": "escala_karnofsky", "required": true}, {"type": "string", "name":
+    "enfermedad_hepatica_leve", "required": true}, {"type": "string", "name": "epitopos_t_diversidad",
+    "required": true}, {"type": "string", "name": "donante_emparentado", "required":
+    true}, {"type": "string", "name": "dosis_melfalan", "required": true}, {"type":
+    "string", "name": "hla_baja_res_8", "required": true}, {"type": "string", "name":
+    "enfermedad_cardiaca", "required": true}, {"type": "string", "name": "hla_drb1_alta_res",
+    "required": true}, {"type": "string", "name": "enfermedad_pulmonar_moderada",
+    "required": true}, {"type": "string", "name": "hla_baja_res_10", "required": true},
+    {"type": "long", "name": "dif_edad_donante", "required": true}, {"type": "long",
+    "name": "es_pediatrico", "required": true}, {"type": "long", "name": "n_comorbilidades",
+    "required": true}, {"type": "long", "name": "recibio_irradiacion", "required":
+    true}, {"type": "string", "name": "grupo_riesgo_enfermedad", "required": true}]'
+  outputs: '[{"type": "long", "required": true}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-11-07 12:41:09.314004'

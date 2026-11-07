@@ -1,0 +1,5 @@
+modelo,SimpleImputer,AUC en df_val,cambio de riesgo con vacíos (puntos %)
+LogisticRegression,constant,0.7377,-21.9032
+LogisticRegression,most_frequent,0.7343,-5.265
+XGBClassifier,constant,0.738,-31.579
+XGBClassifier,most_frequent,0.7354,-7.071

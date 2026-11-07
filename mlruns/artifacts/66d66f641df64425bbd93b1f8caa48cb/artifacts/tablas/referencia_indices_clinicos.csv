@@ -1,0 +1,5 @@
+,AUC en df_test
+Índice de comorbilidad de Sorror,0.5691589854905291
+Grupo de riesgo de la enfermedad,0.6119452775185344
+Escala de Karnofsky,0.5653777102579967
+XGBClassifier (modelo final),0.7376227327859513
