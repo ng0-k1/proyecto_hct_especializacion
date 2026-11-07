@@ -4,11 +4,10 @@ NOMBRES, COMORBILIDADES, GRUPO_RIESGO y limpiar_datos son copia exacta de las se
 Proyecto_Final_ML_Riesgo_Post_Trasplante_Enviar.ipynb. Si cambian allá, deben cambiar aquí.
 
 Artefactos que consume (los exporta la sección 13 del notebook a despliegue/artefactos/):
-    preprocesamiento_hct.joblib   ColumnTransformer ajustado (SimpleImputer, StandardScaler, OneHotEncoder y PCA del bloque HLA)
-    modelo_hct.json               XGBClassifier ajustado con GridSearchCV y reentrenado con todo df_model
-    metadatos.json                umbral, métricas, deciles, opciones válidas, rangos y reglas de limpieza
-    fondo_shapley.csv             200 pacientes de referencia para los valores de Shapley
-    pacientes_ejemplo.csv         5 pacientes reales para precargar el formulario
+    modelo_hct.joblib       Pipeline completo de scikit-learn (preprocesamiento y modelo elegido), reentrenado con todo df_model
+    metadatos.json          umbral, métricas, comparación de modelos, deciles, opciones válidas, rangos y reglas de limpieza
+    fondo_shapley.csv       200 pacientes de referencia para los valores de Shapley
+    pacientes_ejemplo.csv   5 pacientes del dataset (sintético) para precargar el formulario
 """
 from pathlib import Path
 import json
@@ -16,16 +15,13 @@ import json
 import joblib
 import numpy as np
 import pandas as pd
-import xgboost as xgb
-from sklearn.pipeline import Pipeline
 
 CARPETA_DESPLIEGUE = Path(__file__).resolve().parent
 CARPETA_ARTEFACTOS = CARPETA_DESPLIEGUE / "artefactos"
 CARPETA_DATOS = CARPETA_DESPLIEGUE.parent / "data"
 
 ARTEFACTOS = {
-    "preprocesamiento": "preprocesamiento_hct.joblib",
-    "modelo": "modelo_hct.json",
+    "modelo": "modelo_hct.joblib",
     "metadatos": "metadatos.json",
     "fondo": "fondo_shapley.csv",
     "ejemplos": "pacientes_ejemplo.csv",
@@ -89,14 +85,11 @@ def artefactos_faltantes(carpeta=CARPETA_ARTEFACTOS):
 
 
 def cargar_artefactos(carpeta=CARPETA_ARTEFACTOS):
-    """Reconstruye el Pipeline del notebook (columnTransformer + modelo) y lee metadatos, fondo y ejemplos.
+    """Carga el Pipeline del notebook (columnTransformer + modelo) y lee metadatos, fondo y ejemplos.
 
     El fondo de Shapley es opcional: si falta o no trae las variables del formulario se devuelve None
     y la aplicación oculta la sección de explicabilidad."""
-    preprocesamiento = joblib.load(carpeta / ARTEFACTOS["preprocesamiento"])
-    estimador = xgb.XGBClassifier()
-    estimador.load_model(carpeta / ARTEFACTOS["modelo"])
-    modelo = Pipeline([("columnTransformer", preprocesamiento), ("modelo", estimador)])
+    modelo = joblib.load(carpeta / ARTEFACTOS["modelo"])
     meta = json.loads((carpeta / ARTEFACTOS["metadatos"]).read_text(encoding="utf-8"))
     ejemplos_crudos = pd.read_csv(carpeta / ARTEFACTOS["ejemplos"])
     ejemplos = formulario(ejemplos_crudos, meta)

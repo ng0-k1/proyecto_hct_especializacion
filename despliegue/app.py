@@ -1,6 +1,6 @@
 """Aplicación web del modelo de riesgo a 12 meses tras el trasplante de médula ósea.
 
-Ejecución local, desde la raíz del proyecto:   streamlit run despliegue/app.py
+Ejecución local, desde la raíz del proyecto:   uv run python -m streamlit run despliegue/app.py
 Streamlit Community Cloud:                     Main file path = despliegue/app.py (ver README.md)
 """
 import io
@@ -243,12 +243,13 @@ st.markdown("<div class='encabezado'><h1>Riesgo en el primer año después del t
 with st.sidebar:
     st.header("Datos del paciente")
     origen = st.radio("Punto de partida", ["Paciente de ejemplo", "Formulario en blanco", "Importar CSV"], key="origen",
-                      help="Puede partir de un paciente real de ejemplo, llenar el formulario desde cero o importar un CSV "
+                      help="Puede partir de un paciente de ejemplo, llenar el formulario desde cero o importar un CSV "
                            "(por ejemplo, uno exportado antes desde esta aplicación).")
     base, clave, avisos, id_paciente = None, "blanco", [], None
     if origen == "Paciente de ejemplo":
         id_paciente = st.selectbox("Paciente", list(ejemplos.index), format_func=lambda i: f"ID {i}",
-                                   help="Pacientes reales de train.csv, guardados por el notebook en pacientes_ejemplo.csv.")
+                                   help="Pacientes de train.csv (datos sintéticos de la competencia), guardados por el notebook "
+                                        "en pacientes_ejemplo.csv.")
         base, clave = ejemplos.loc[id_paciente], f"ejemplo_{id_paciente}"
     elif origen == "Importar CSV":
         archivo = st.file_uploader("CSV con uno o varios pacientes", type="csv", key="csv_paciente",
@@ -427,8 +428,8 @@ if HAY_EXPLICACION:
             st.caption(f"Valores de Shapley del modelo desplegado, estimados por muestreo de {n_perm} permutaciones con los "
                        f"{len(fondo)} pacientes de referencia de fondo_shapley.csv. Las 17 variables HLA se tratan como un solo "
                        "factor, igual que compatibilidad_hla en la sección 12 del notebook. Las contribuciones están en puntos "
-                       "de probabilidad y, sumadas al riesgo de referencia, dan exactamente el riesgo del paciente; el notebook "
-                       "las reporta en log-odds, así que se compara la dirección y el orden, no la magnitud.")
+                       "de probabilidad y, sumadas al riesgo de referencia, dan exactamente el riesgo del paciente. La sección 12 "
+                       "del notebook explica cómo leerlas y las compara con SHAP y con la importancia por permutación.")
 
 
 # Pestaña: predicción por lotes
@@ -512,52 +513,91 @@ with tabs["Predicción por lotes"]:
 
 # Pestaña: cómo funciona el modelo
 
+def formato_parametro(k, v):
+    return f"`{k}={v:.4g}`" if isinstance(v, float) else f"`{k}={v}`"
+
+
+def con_intervalo(clave, formato):
+    intervalo = meta.get("intervalos_prueba", {}).get(clave)
+    return "" if intervalo is None else f"IC 95%: {formato.format(intervalo[0])} a {formato.format(intervalo[1])}"
+
+
 with tabs["Cómo funciona el modelo"]:
     metricas = meta["metricas_prueba"]
-    st.subheader("Desempeño en df_test: 4,285 pacientes que el modelo no vio al elegirse")
+    pacientes_prueba = sum(d["pacientes"] for d in meta["deciles_prueba"])
+    st.subheader(f"Desempeño en df_test: {pacientes_prueba:,} pacientes que no se usaron para elegir el modelo")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        tarjeta("AUC-ROC", f"{metricas['AUC-ROC']:.3f}", "Capacidad de ordenar pacientes por riesgo")
+        tarjeta("AUC-ROC", f"{metricas['AUC-ROC']:.3f}", f"Capacidad de ordenar pacientes por riesgo. {con_intervalo('AUC-ROC', '{:.3f}')}")
     with c2:
-        tarjeta("Recall del evento", f"{metricas['recall del evento']:.1%}", "Eventos detectados con el umbral")
+        tarjeta("Recall del evento", f"{metricas['recall del evento']:.1%}",
+                f"Eventos detectados con el umbral. {con_intervalo('recall del evento', '{:.1%}')}")
     with c3:
-        tarjeta("Precision del evento", f"{metricas['precision del evento']:.1%}", "Alertas que resultan correctas")
+        tarjeta("Precision del evento", f"{metricas['precision del evento']:.1%}",
+                f"Alertas que resultan correctas. {con_intervalo('precision del evento', '{:.1%}')}")
     with c4:
-        tarjeta("Brier score", f"{metricas['Brier score']:.3f}", "0.25 equivale a predecir siempre 50%")
+        tarjeta("Brier score", f"{metricas['Brier score']:.3f}", "Error de las probabilidades; 0.25 equivale a decir siempre 50%")
     st.write("")
     izq, der = st.columns(2)
     with izq:
         st.markdown("**Riesgo predicho y tasa real por decil (df_test)**")
         lienzo(grafico_deciles(), 380)
     with der:
-        st.markdown("**Las 15 variables que más pesan según SHAP (sección 12 del notebook)**")
-        imp = pd.Series(meta["importancia_shap"]).sort_values(ascending=False).head(15).iloc[::-1]
-        fig = go.Figure(go.Bar(x=imp.values, y=[etiqueta(c) for c in imp.index], orientation="h", marker_color=AZUL))
-        fig.update_layout(xaxis_title="SHAP medio absoluto (log-odds)")
-        lienzo(fig, 380)
+        st.markdown("**Seis modelos comparados con validación cruzada de 10 pliegues (AUC medio y desviación)**")
+        comparacion = pd.DataFrame(meta.get("comparacion_modelos", {})).T.sort_values("auc_cv_media")
+        if not comparacion.empty:
+            fig = go.Figure(go.Bar(x=comparacion["auc_cv_media"], y=comparacion.index, orientation="h",
+                                   error_x=dict(type="data", array=comparacion["auc_cv_desv"], color=TINTA),
+                                   marker_color=[TINTA if n == meta["modelo"] else CLARO for n in comparacion.index]))
+            minimo = float(comparacion["auc_cv_media"].min())
+            fig.update_layout(xaxis=dict(title="AUC en validación cruzada (configuración de partida)", range=[minimo - 0.02, None]))
+            lienzo(fig, 380)
+            ajuste = meta.get("ajuste")
+            if ajuste:
+                st.caption(f"El mejor se ajustó con {ajuste['metodo']} ({ajuste['combinaciones']} combinaciones): AUC en df_val de "
+                           f"{ajuste['auc_val_ajustado']:.4f} ajustado frente a {ajuste['auc_val_sin_ajustar']:.4f} sin ajustar.")
 
-    hp = meta["hiperparametros"]
+    izq, der = st.columns(2)
+    with izq:
+        st.markdown("**Cuánto mueve cada variable el riesgo de un paciente (SHAP, en puntos de riesgo)**")
+        puntos = meta.get("importancia_shap_puntos") or meta["importancia_shap"]
+        imp = pd.Series(puntos).sort_values(ascending=False).head(12).iloc[::-1]
+        fig = go.Figure(go.Bar(x=imp.values, y=[etiqueta(c) for c in imp.index], orientation="h", marker_color=AZUL))
+        fig.update_layout(xaxis_title="Puntos de riesgo en promedio" if "importancia_shap_puntos" in meta else "SHAP medio absoluto")
+        lienzo(fig, 380)
+    with der:
+        st.markdown("**Cuánto empeora el modelo al desordenar cada variable (aumento del log-loss)**")
+        if meta.get("importancia_permutacion"):
+            perm = pd.Series(meta["importancia_permutacion"]).sort_values(ascending=False).head(12).iloc[::-1]
+            fig = go.Figure(go.Bar(x=perm.values, y=[etiqueta(c) for c in perm.index], orientation="h", marker_color=ROJO))
+            fig.update_layout(xaxis_title="Aumento del log-loss en df_val (más alto: el modelo depende más de la variable)")
+            lienzo(fig, 380)
+
+    parametros = ", ".join(formato_parametro(k, v) for k, v in meta["hiperparametros"].items())
     st.markdown(f"""
-**Modelo desplegado.** {meta['modelo']} con `max_depth={hp['max_depth']}`, `learning_rate={hp['learning_rate']}`,
-`min_child_weight={hp['min_child_weight']}` y `n_estimators={hp['n_estimators']}` (elegidos con GridSearchCV), dentro de un
-Pipeline con el preprocesamiento. Umbral de alerta {meta['umbral']:.3f}, elegido con el índice de Youden en df_val. Para el
-despliegue se reentrenó con los {meta['pacientes_despliegue']:,} pacientes de df_model; las métricas de arriba son las de df_test
-antes de ese reentrenamiento. Average precision {metricas['average precision']:.3f}, F1 macro {metricas['F1 macro']:.3f} y
-balanced accuracy {metricas['balanced accuracy']:.3f}.
+**Modelo desplegado.** {meta['modelo']} dentro de un Pipeline con el preprocesamiento, con {parametros} (elegidos con GridSearchCV).
+Se eligió {meta.get('seleccion', meta['modelo'])}. Umbral de alerta {meta['umbral']:.3f}, elegido con el índice de Youden en df_val. Para el despliegue se reentrenó con los
+{meta['pacientes_despliegue']:,} pacientes de df_model; las métricas de arriba son las de df_test antes de ese reentrenamiento.
+Average precision {metricas['average precision']:.3f}, F1 macro {metricas['F1 macro']:.3f}, balanced accuracy
+{metricas['balanced accuracy']:.3f}{f" y log-loss {metricas['log-loss']:.3f}" if 'log-loss' in metricas else ''}.
 """)
     with st.expander("Datos, método y límites"):
         st.markdown(f"""
 **Datos.** Competencia CIBMTR, Equity in post-HCT Survival Predictions, de Kaggle ({meta['fuente_diccionario']}): 28,800
-pacientes y 57 variables registradas antes del trasplante. El evento es `efs = 1` dentro de los primeros 12 meses; se excluyen
-los 238 pacientes sin evento que salieron del seguimiento antes del año.
+pacientes y 57 variables registradas antes del trasplante. Son datos sintéticos que el CIBMTR generó a partir de su registro
+real. El evento es `efs = 1` dentro de los primeros 12 meses; se excluyen los 238 pacientes sin evento que salieron del
+seguimiento antes del año.
 
 **Método.** Variables con más de 50% de nulos eliminadas ({', '.join(meta['columnas_eliminadas'])}), vacíos genéticos marcados
 como No aplica y cinco variables nuevas; SimpleImputer, StandardScaler, OneHotEncoder y PCA sobre el bloque HLA dentro de un
-Pipeline; seis modelos comparados con StratifiedKFold de 10 pliegues; GridSearchCV; umbral fijado en df_val; evaluación única en
-df_test; explicabilidad con SHAP.
+Pipeline; seis modelos comparados con validación cruzada estratificada de 10 pliegues y la prueba de Wilcoxon; GridSearchCV sobre
+el mejor (5 pliegues); umbral fijado en df_val; evaluación única en df_test con intervalos de confianza por bootstrap;
+explicabilidad con SHAP e importancia por permutación. Todo el proceso queda registrado en MLflow.
 
-**Límites.** Los trasplantes son de 2008 a 2020. En niños y en injertos de médula ósea el umbral general detecta pocos eventos
-porque su riesgo base es menor. Para usarlo en otro país o centro conviene recalibrarlo con datos locales.
+**Límites.** Los trasplantes son de 2008 a 2020 y la validación no separó por fechas, así que no garantiza el desempeño en
+años futuros. En niños y en injertos de médula ósea el umbral general detecta pocos eventos porque su riesgo base es menor.
+Para usarlo en otro país o centro hay que validarlo y recalibrarlo con datos locales. Es una herramienta académica de apoyo,
+no un dispositivo médico.
 """)
     with st.expander("Diccionario de variables del formulario"):
         diccionario = pd.DataFrame({
