@@ -52,7 +52,7 @@ ETIQUETAS = {
     "n_comorbilidades": "Número de comorbilidades", "es_pediatrico": "Paciente pediátrico",
     "dif_edad_donante": "Diferencia de edad donante-paciente (años, sin signo)", "recibio_irradiacion": "Recibió irradiación",
 }
-PASOS = {"escala_karnofsky": (10.0, "%.0f")}
+PASOS = {"escala_karnofsky": 10}
 LECTURA = {
     "Alto": "El perfil se parece al de los pacientes con mayor tasa de eventos en el primer año. Puede justificar un plan de "
             "seguimiento más estrecho y revisar con anticipación las alternativas de donante y de tratamiento.",
@@ -203,12 +203,12 @@ def campo(c, base, clave):
     descripcion = meta["descripciones"].get(c, "")
     vacio = f"{SIN_DATO} ({texto_imputacion(c)})"
     if c in meta["rangos"]:
-        minimo, _, maximo = meta["rangos"][c]
-        paso, formato = PASOS.get(c, (1.0, "%.0f"))
-        return st.number_input(etiqueta(c), min_value=float(minimo), max_value=float(maximo),
-                               value=None if defecto is None else float(defecto), step=paso, format=formato,
+        # Todas las variables numéricas del formulario son enteras: edades en años cumplidos, escalas y conteos HLA
+        minimo, _, maximo = (int(round(x)) for x in meta["rangos"][c])
+        return st.number_input(etiqueta(c), min_value=minimo, max_value=maximo,
+                               value=None if defecto is None else int(defecto), step=PASOS.get(c, 1), format="%d",
                                key=f"{clave}__{c}", placeholder=vacio,
-                               help=f"{descripcion}. Rango del entrenamiento: {minimo:g} a {maximo:g}.")
+                               help=f"{descripcion}. Rango del entrenamiento: {minimo} a {maximo}.")
     opciones = [None] + meta["opciones"][c]
     indice = opciones.index(str(defecto)) if defecto is not None and str(defecto) in opciones else 0
     return st.selectbox(etiqueta(c), opciones, index=indice, key=f"{clave}__{c}", help=descripcion,
@@ -294,6 +294,7 @@ if vigente:
     nivel = proc.nivel_riesgo(riesgo, meta)
     alto = riesgo >= meta["umbral"]
     n_sin_dato = int(proc.faltantes(paciente, meta)[0])
+    usados = proc.valores_modelo(paciente, meta)
 
 nombres_tabs = ["Paciente", "Por qué lo predice", "Predicción por lotes", "Cómo funciona el modelo"]
 if not HAY_EXPLICACION:
@@ -349,7 +350,7 @@ with tabs["Paciente"]:
                         "decisión; no reemplaza el criterio médico.</p>", unsafe_allow_html=True)
 
         st.subheader("Exportar")
-        exportado = proc.a_nombres_originales(paciente)
+        exportado = proc.a_nombres_originales(paciente).astype({proc.NOMBRES_ORIGINALES.get(c, c): "Int64" for c in meta["rangos"]})
         exportado.insert(0, "ID", estado["id"] if estado["id"] is not None else "")
         exportado = exportado.assign(riesgo_evento_12m=round(riesgo, 4), nivel=nivel, alto_riesgo=alto, variables_sin_dato=n_sin_dato)
         e1, e2 = st.columns(2)
@@ -367,7 +368,7 @@ with tabs["Paciente"]:
                 "Grupo": [g for g, cols in grupos.items() for _ in cols],
                 "Variable": [etiqueta(c) for cols in grupos.values() for c in cols],
                 "Valor ingresado": [texto_valor(fila[c]) for cols in grupos.values() for c in cols],
-                "Valor que usa el modelo": [texto_valor(fila[c]) if not pd.isna(fila[c]) else texto_imputacion(c)
+                "Valor que usa el modelo": [usados[c] if usados[c] is not None else texto_imputacion(c)
                                             for cols in grupos.values() for c in cols],
             })
             st.dataframe(tabla, hide_index=True, height=420)
@@ -392,10 +393,8 @@ if HAY_EXPLICACION:
             top, resto = contrib[orden[:n_top]], contrib[orden[n_top:]]
 
             def rotulo_factor(c):
-                if c == proc.GRUPO_HLA:
-                    v = paciente["hla_alta_res_8"].iloc[0]
-                    return f"{etiqueta(c)}: {'Sin dato' if pd.isna(v) else f'{v:.0f} de 8'}"
-                return f"{etiqueta(c)}: {texto_valor(paciente[c].iloc[0])}"
+                v = usados["hla_alta_res_8"] if c == proc.GRUPO_HLA else usados.get(c)
+                return f"{etiqueta(c)}: {SIN_DATO if v is None else v}"
 
             etiquetas = ["Riesgo de referencia"] + [rotulo_factor(c) for c in top.index]
             valores_x, medidas = [base_ref] + list(top.values), ["absolute"] + ["relative"] * len(top)

@@ -57,6 +57,7 @@ NOMBRES_ORIGINALES = {nuevo: original for original, nuevo in NOMBRES.items()}
 COLUMNAS_HLA = sorted(c for c in NOMBRES.values() if c.startswith("hla_"))
 VARIABLES_GENETICAS = ["citogenetica_detalle", "epitopos_t_diversidad", "epitopos_t_inmunogenicidad", "puntaje_citogenetico"]
 COLUMNAS_ENTERAS = ["edad_paciente", "edad_donante", "indice_comorbilidad_sorror", "escala_karnofsky"]
+EDADES = ["edad_paciente", "edad_donante"]
 COMORBILIDADES = ["trastorno_psiquiatrico", "diabetes", "arritmia", "enfermedad_renal", "enfermedad_pulmonar_severa",
                   "enfermedad_pulmonar_moderada", "enfermedad_hepatica_severa", "enfermedad_hepatica_leve", "obesidad",
                   "tumor_previo", "ulcera_peptica", "enfermedad_reumatologica", "enfermedad_cardiaca"]
@@ -167,14 +168,17 @@ def valores_imputacion(modelo, meta):
 # Preparación de los datos
 
 def formulario(df, meta):
-    """Deja los datos del paciente como en df_raw, con los nombres en español y solo las variables del formulario.
-    Acepta columnas con los nombres originales de Kaggle o con los nombres nuevos; las que falten quedan vacías."""
+    """Deja los datos del paciente con los nombres en español y solo las variables del formulario.
+    Acepta columnas con los nombres originales de Kaggle o con los nombres nuevos; las que falten quedan vacías.
+    Las variables numéricas quedan como enteros desde la entrada: las edades en años cumplidos (como la limpieza
+    del notebook) y las escalas y conteos HLA redondeados, así lo que se muestra es lo mismo que recibe el modelo."""
     df = df.rename(columns=NOMBRES).copy()
     for c in meta["variables_formulario"]:
         if c not in df:
             df[c] = np.nan
         if c in meta["rangos"]:
-            df[c] = pd.to_numeric(df[c], errors="coerce").astype(float)
+            valores = pd.to_numeric(df[c], errors="coerce").astype(float)
+            df[c] = np.floor(valores) if c in EDADES else valores.round()
         else:
             df[c] = df[c].astype(object).where(df[c].notna(), np.nan)
             df[c] = df[c].map(lambda v: (v.strip() or np.nan) if isinstance(v, str) else v)
@@ -185,6 +189,32 @@ def preparar_entrada(df, meta):
     """Aplica la misma limpieza y representación del notebook y entrega las columnas que recibe el modelo."""
     limpio = limpiar_datos(formulario(df, meta), meta["columnas_eliminadas"])
     return agrupar_variables(limpio[meta["columnas_entrada"]], meta.get("variables_agrupadas", []))
+
+
+def valores_modelo(df, meta):
+    """Valor de cada variable del formulario tal como lo recibe el modelo, después de la limpieza y la agrupación.
+    Devuelve None cuando el dato falta y lo completa el Pipeline (mediana o valor más frecuente)."""
+    limpio = limpiar_datos(formulario(df, meta), meta["columnas_eliminadas"])
+    agrupadas = meta.get("variables_agrupadas", [])
+    modelo = agrupar_variables(limpio[meta["columnas_entrada"]], agrupadas)
+    salida = {}
+    for c in meta["variables_formulario"]:
+        if c == "indice_riesgo_enfermedad":
+            v = modelo["grupo_riesgo_enfermedad"].iloc[0]
+            salida[c] = None if pd.isna(v) else f"grupo {v}"
+        elif c in COLUMNAS_HLA:
+            numero = int(limpio[c].iloc[0])
+            texto = "-1" if numero < 0 else f"{numero} de {MAXIMO_HLA[c]}"
+            salida[c] = f"{texto} (nivel {modelo[c].iloc[0]})" if c in agrupadas else texto
+        else:
+            v = modelo[c].iloc[0]
+            if pd.isna(v):
+                salida[c] = None
+            elif isinstance(v, (int, float, np.number)):
+                salida[c] = f"{int(v)}"
+            else:
+                salida[c] = str(v)
+    return salida
 
 
 def columnas_faltantes(df, meta):
@@ -222,7 +252,7 @@ def plantilla_csv(meta):
 # Predicción
 
 def predecir(modelo, df, meta):
-    return modelo.predict_proba(preparar_entrada(df, meta))[:, 1]
+    return modelo.predict_proba(preparar_entrada(df, meta))[:, 1].astype(float)
 
 
 def nivel_riesgo(p, meta):
