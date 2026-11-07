@@ -1,0 +1,6 @@
+modelo comparado,diferencia media de AUC,pliegues en que gana el mejor,p-valor,diferencia significativa (p < 0.05)
+LogisticRegression,0.0035139911668564893,8 de 10,0.037109375,Sí
+HistGradientBoostingClassifier,0.006639382139569416,10 de 10,0.001953125,Sí
+AdaBoostClassifier,0.008423551147138187,10 de 10,0.001953125,Sí
+RandomForestClassifier,0.016610471102456604,10 de 10,0.001953125,Sí
+KNeighborsClassifier,0.03972214193472714,10 de 10,0.001953125,Sí

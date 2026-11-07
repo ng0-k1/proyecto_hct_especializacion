@@ -1,0 +1,17 @@
+variable,efecto,valor,pacientes,SHAP medio (log-odds),puntos de riesgo sobre un paciente promedio
+sexo_donante_receptor,sube,F-M,541,0.24884552,6.1331398929842855
+sexo_donante_receptor,baja,M-M,549,-0.23483238,-5.863808826040373
+intensidad_acondicionamiento,sube,RIC,575,0.3449738,8.441961571145907
+intensidad_acondicionamiento,baja,Sin dato,331,-0.14289813,-3.5699926172009566
+compatibilidad_hla,sube,8,988,0.032766856,0.8161969627627275
+compatibilidad_hla,baja,5,106,-0.089825556,-2.2433094535580733
+profilaxis_injerto_huesped,sube,FK+ MMF +- others,740,0.20240113,5.003041788507357
+profilaxis_injerto_huesped,baja,Cyclophosphamide +- others,159,-0.28022844,-6.991993621420011
+anio_trasplante,sube,2008 a 2012,411,0.27203953,6.69416861193265
+anio_trasplante,baja,2017 a 2018,501,-0.21041164,-5.255436137746916
+puntaje_citogenetico,sube,Normal,58,0.27350408,6.729502245355501
+puntaje_citogenetico,baja,No aplica,537,-0.19708398,-4.923083618711576
+indice_comorbilidad_sorror,sube,6.0,50,0.49176678,11.871237322259798
+indice_comorbilidad_sorror,baja,1.0,357,-0.1062866,-2.6548258815518477
+deplecion_celulas_t,sube,No,1254,0.09795052,2.4340279545077226
+deplecion_celulas_t,baja,Yes,732,-0.1407027,-3.515132502149687

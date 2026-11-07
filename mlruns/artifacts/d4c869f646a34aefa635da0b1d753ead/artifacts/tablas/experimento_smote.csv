@@ -1,0 +1,5 @@
+modelo,estrategia,AUC,F1 macro,balanced accuracy,recall del evento
+LogisticRegression,sin SMOTE,0.7369,0.6684,0.6684,0.7394
+LogisticRegression,con SMOTE,0.7368,0.6693,0.6692,0.6933
+XGBClassifier,sin SMOTE,0.7378,0.6721,0.6722,0.7496
+XGBClassifier,con SMOTE,0.7392,0.6728,0.6727,0.7407

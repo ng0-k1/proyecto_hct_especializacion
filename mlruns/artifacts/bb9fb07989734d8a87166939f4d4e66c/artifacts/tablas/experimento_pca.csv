@@ -1,0 +1,4 @@
+variante,columnas que recibe el modelo,AUC en df_val
+Sin PCA,241,0.7377
+PCA solo en HLA (95% de varianza),181,0.7369
+PCA sobre todas las columnas (95% de varianza),72,0.7315
