@@ -12,11 +12,13 @@ Cifras de la ejecución guardada del notebook, las mismas de `despliegue/artefac
 
 | Aspecto | Resultado |
 |---|---|
-| Modelo | XGBClassifier, el mejor de seis modelos en validación cruzada de 10 pliegues (AUC 0.7349 ± 0.0062); su ventaja sobre LogisticRegression, el segundo, es significativa según la prueba de Wilcoxon (p = 0.037) |
-| Hiperparámetros | GridSearchCV con 120 combinaciones: `max_depth=2`, `learning_rate=0.03`, `n_estimators=1600`, `min_child_weight=1` |
-| AUC-ROC en df_test | 0.744 (intervalo de confianza del 95 %: 0.728 a 0.758) |
-| Recall y precision del evento | 73.0 % y 68.1 % con el umbral de 0.507 |
-| Separación de riesgo | 13.1 % con evento en el decil de menor riesgo frente a 83.7 % en el de mayor riesgo |
+| Variables | 56 predictores: edades en años cumplidos, diferencia de edad entera y sin signo, escalas como enteros, las 17 HLA con -1 si no hay dato y agrupadas en cuatro niveles (Sin dato, Baja, Media y Alta); el año del trasplante no se usa como predictor |
+| Preprocesamiento | Continuas y escalas: mediana y StandardScaler; binarias: valor más frecuente, sin escalar; categóricas y niveles HLA: valor más frecuente y OneHotEncoder; sin PCA (217 columnas) |
+| Modelo | XGBClassifier, el de mayor AUC entre seis modelos en validación cruzada de 10 pliegues (0.7309 ± 0.0075); su ventaja sobre LogisticRegression (0.7295) no es significativa según la prueba de Wilcoxon (p = 0.322), así que los dos rinden casi igual |
+| Hiperparámetros | GridSearchCV con 120 combinaciones: `max_depth=2`, `learning_rate=0.06`, `n_estimators=800`, `min_child_weight=10` |
+| AUC-ROC en df_test | 0.738 (intervalo de confianza del 95 %: 0.721 a 0.752) |
+| Recall y precision del evento | 66.1 % y 68.9 % con el umbral de 0.548 |
+| Separación de riesgo | 12.6 % con evento en el decil de menor riesgo frente a 84.1 % en el de mayor riesgo |
 | Punto de referencia | Los índices clínicos usados por separado (Sorror, Karnofsky y grupo de riesgo de la enfermedad) logran un AUC de 0.565 a 0.612 |
 | Pacientes del modelo desplegado | 28,562 (todo df_model) |
 
@@ -111,7 +113,7 @@ O ejecutarlo completo desde la terminal y guardar todas las salidas en el mismo 
 uv run python -m nbconvert --to notebook --execute --inplace Proyecto_Final_ML_Riesgo_Post_Trasplante_Enviar.ipynb
 ```
 
-Con 20 núcleos tarda unos 7 minutos; la búsqueda de hiperparámetros es la parte más larga (unos 4). En equipos con menos núcleos tarda proporcionalmente más.
+Con 20 núcleos tarda unos 9 minutos: la validación cruzada y la búsqueda de hiperparámetros usan todos los núcleos (`n_jobs=-1`, un hilo por modelo) y la búsqueda es la parte más larga (unos 4). En equipos con menos núcleos tarda proporcionalmente más.
 
 Qué genera:
 
@@ -134,6 +136,7 @@ Y abrir http://127.0.0.1:5000. En el experimento `riesgo_post_trasplante` aparec
 | Run | Qué registra |
 |---|---|
 | datos_y_analisis_exploratorio | Tamaño de los datos y de la partición, los tres conjuntos (df_train, df_val y df_test) y las figuras del análisis exploratorio |
+| experimento_representacion | Cada variable como número o agrupada (HLA, Sorror, Karnofsky y número de comorbilidades) con su AUC en validación cruzada de 5 pliegues |
 | experimento_imputacion, experimento_pca, experimento_smote | Cada variante como un run anidado, con su AUC en df_val |
 | comparacion_modelos | Los seis modelos (un run anidado por modelo) con la media y la desviación de cada métrica en 10 pliegues, la gráfica de cajas y la prueba de Wilcoxon |
 | gridsearch \| modelo | Cada combinación de hiperparámetros como un run anidado, con su AUC; el mapa de calor y la tabla completa |
@@ -189,13 +192,13 @@ Columnas que agrega la predicción:
 | Columna | Significado |
 |---|---|
 | `riesgo_evento_12m` | Probabilidad de evento en 12 meses |
-| `nivel` | Bajo hasta el riesgo medio del decil 3 de df_test (37.4 %), alto desde el del decil 8 (68.2 %) |
-| `alto_riesgo` | `True` si el riesgo supera el umbral de 0.507 |
-| `variables_sin_dato` | Cuántas de las 53 variables del formulario venían vacías |
+| `nivel` | Bajo hasta el riesgo medio del decil 3 de df_test (38.0 %), alto desde el del decil 8 (68.2 %) |
+| `alto_riesgo` | `True` si el riesgo supera el umbral de 0.548 |
+| `variables_sin_dato` | Cuántas de las 52 variables del formulario venían vacías |
 
 ### Explicabilidad en la aplicación
 
-La pestaña **Por qué lo predice** solo aparece si `fondo_shapley.csv` existe, trae las 53 variables del formulario y tiene al menos 50 pacientes. Calcula valores de Shapley del modelo desplegado por muestreo de permutaciones, usando esos 200 pacientes como referencia; las 17 variables HLA se tratan como un solo factor, igual que `compatibilidad_hla` en el notebook. Las contribuciones están en puntos de probabilidad y, sumadas al riesgo de referencia, dan exactamente el riesgo del paciente.
+La pestaña **Por qué lo predice** solo aparece si `fondo_shapley.csv` existe, trae las 52 variables del formulario y tiene al menos 50 pacientes. Calcula valores de Shapley del modelo desplegado por muestreo de permutaciones, usando esos 200 pacientes como referencia; las 17 variables HLA se tratan como un solo factor, igual que `compatibilidad_hla` en el notebook. Las contribuciones están en puntos de probabilidad y, sumadas al riesgo de referencia, dan exactamente el riesgo del paciente.
 
 ## 7. Publicar gratis en Streamlit Community Cloud
 
