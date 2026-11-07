@@ -1,0 +1,42 @@
+[project]
+name = "riesgo-post-trasplante"
+version = "1.0.0"
+description = "Riesgo de evento adverso en los 12 meses siguientes a un trasplante de médula ósea: notebook de entrenamiento y aplicación Streamlit."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+authors = [{ name = "Oscar David Perilla Dominguez" }]
+
+# Dependencias de la aplicación: son las que se despliegan en Streamlit Community Cloud.
+# Las librerías del modelo van con versión fija porque el pipeline se guarda con joblib
+# y solo se puede cargar con las mismas versiones con que se entrenó.
+dependencies = [
+    "scikit-learn==1.6.1",
+    "pandas==2.2.3",
+    "numpy==2.4.6",
+    "joblib==1.6.0",
+    "xgboost==3.4.1",
+    "streamlit==1.66.1",
+    "plotly==7.1.0",
+]
+
+[dependency-groups]
+# Entrenamiento y análisis: notebook, búsqueda de hiperparámetros (GridSearchCV de scikit-learn),
+# registro de experimentos (MLflow), balanceo (imbalanced-learn) y explicabilidad (SHAP).
+notebook = [
+    "jupyterlab>=4.4",
+    "ipykernel>=6.29",
+    "ipywidgets>=8.1",
+    "nbconvert>=7.16",
+    "matplotlib>=3.10",
+    "seaborn>=0.13",
+    "scipy>=1.15",
+    "shap>=0.48",
+    "imbalanced-learn>=0.13",
+    "mlflow>=3.4",
+]
+
+[tool.uv]
+# El proyecto no es una librería instalable: uv solo administra el entorno virtual.
+package = false
+# `uv sync` instala todo (aplicación y notebook). El despliegue exporta solo la aplicación.
+default-groups = ["notebook"]
